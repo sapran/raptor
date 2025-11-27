@@ -1,24 +1,37 @@
 ---
-name: Github Archive Analysis
-description: Analyze OSS Github repositories using Github historical archive
+name: github-archive-analysis
+description: Investigate GitHub security incidents using tamper-proof GitHub Archive data via BigQuery. Use when verifying repository activity claims, recovering deleted PRs/branches/tags/repos, attributing actions to actors, or reconstructing attack timelines. Provides immutable forensic evidence of all public GitHub events since 2011.
 version: 1.0
 author: mbrg
 tags:
   - github
-  - git
   - forensics
+  - security
 ---
 
-# GitHub Forensics using GH Archive 
+# GitHub Archive Forensics
 
-## Overview
+**Purpose**: Query immutable GitHub event history via BigQuery to obtain tamper-proof forensic evidence for security investigations.
 
-GH Archive is an immutable record of public GitHub activity. It's an OSS project that stores GitHub log events for all public repositories. Unlike local git repositories (which can be rewritten), GitHub Archive provides tamper-proof evidence of GitHub events as they occurred. GH Archive is available to query via Google BigQuery (requires Google Cloud credentials).
+## When to Use This Skill
+
+- Investigating security incidents involving GitHub repositories
+- Building threat actor attribution profiles
+- Verifying claims about repository activity (media reports, incident reports)
+- Reconstructing attack timelines with definitive timestamps
+- Analyzing automation system compromises
+- Detecting supply chain reconnaissance
+- Cross-repository behavioral analysis
+- Workflow execution verification (legitimate vs API abuse)
+- Pattern-based anomaly detection
+- **Recovering deleted content**: PRs, issues, branches, tags, entire repositories
+
+GitHub Archive analysis should be your **FIRST step** in any GitHub-related security investigation. Start with the immutable record, then enrich with additional sources.
 
 ## Core Principles
 
 **ALWAYS PREFER GitHub Archive as forensic evidence over**:
-- Local git command outputs (git log, git show) - commits can be backdated/forged
+- Local git command outputs (`git log`, `git show`) - commits can be backdated/forged
 - Unverified claims from articles or reports - require independent confirmation
 - GitHub web interface screenshots - can be manipulated
 - Single-source evidence - always cross-verify
@@ -29,26 +42,26 @@ GH Archive is an immutable record of public GitHub activity. It's an OSS project
 - Event verification (what actually happened)
 - Pattern analysis (behavioral fingerprinting)
 - Cross-repository activity tracking
-- **Deleted content recovery** (issues, PRs, tags, commits references remain in archive)
+- **Deleted content recovery** (issues, PRs, tags, commit references remain in archive)
 - **Repository deletion forensics** (commit SHAs persist even after repo deletion and history rewrites)
 
 ### What Persists After Deletion
 
 **Deleted Issues & PRs**:
-- Issue creation events (IssuesEvent) remain in archive
-- Issue comments (IssueCommentEvent) remain accessible
-- PR open/close/merge events (PullRequestEvent) persist
+- Issue creation events (`IssuesEvent`) remain in archive
+- Issue comments (`IssueCommentEvent`) remain accessible
+- PR open/close/merge events (`PullRequestEvent`) persist
 - **Forensic Value**: Recover deleted evidence of social engineering, reconnaissance, or coordination
 
 **Deleted Tags & Branches**:
-- CreateEvent records for tag/branch creation persist
-- DeleteEvent records document when deletion occurred
+- `CreateEvent` records for tag/branch creation persist
+- `DeleteEvent` records document when deletion occurred
 - **Forensic Value**: Reconstruct attack staging infrastructure (e.g., malicious payload delivery tags)
 
 **Deleted Repositories**:
-- All PushEvents to the repository remain queryable
+- All `PushEvent` records to the repository remain queryable
 - Commit SHAs are permanently recorded in archive
-- Fork relationships (ForkEvent) survive deletion
+- Fork relationships (`ForkEvent`) survive deletion
 - **Forensic Value**: Access commit metadata even after threat actor deletes evidence
 
 **Deleted User Accounts**:
@@ -56,40 +69,72 @@ GH Archive is an immutable record of public GitHub activity. It's an OSS project
 - Timeline reconstruction remains possible
 - **Limitation**: Direct code access lost, but commit SHAs can be searched elsewhere
 
-### When to Use This Skill
+## Quick Start
 
-- Investigating security incidents involving GitHub repositories
-- Building threat actor attribution profiles
-- Verifying claims about repository activity
-- Reconstructing attack timelines
-- Analyzing automation system compromises
-- Detecting supply chain reconnaissance
-- Cross-repository behavioral analysis
-- Workflow execution verification
-- Pattern-based anomaly detection
+**Investigate if user opened PRs in June 2025:**
 
-GitHub Archive analysis should be your FIRST step in any GitHub-related security investigation. Start with the immutable record, then enrich with additional sources.
+```python
+from google.cloud import bigquery
+from google.oauth2 import service_account
 
-## Access GitHub Archive via BigQuery
+# Initialize client (see Setup section for credentials)
+credentials = service_account.Credentials.from_service_account_file(
+    'path/to/credentials.json',
+    scopes=['https://www.googleapis.com/auth/bigquery']
+)
+client = bigquery.Client(credentials=credentials, project=credentials.project_id)
 
-### Access via BigQuery
+# Query for PR events
+query = """
+SELECT
+    created_at,
+    repo.name,
+    JSON_EXTRACT_SCALAR(payload, '$.pull_request.number') as pr_number,
+    JSON_EXTRACT_SCALAR(payload, '$.pull_request.title') as pr_title,
+    JSON_EXTRACT_SCALAR(payload, '$.action') as action
+FROM `githubarchive.day.202506*`
+WHERE
+    actor.login = 'suspected-actor'
+    AND repo.name = 'target/repository'
+    AND type = 'PullRequestEvent'
+ORDER BY created_at
+"""
 
-The entire GH Archive is also available as a public dataset on Google BigQuery: the dataset is automatically updated every hour and enables you to run arbitrary SQL-like queries over the entire dataset in seconds. To get started:
+results = client.query(query)
+for row in results:
+    print(f"{row.created_at}: PR #{row.pr_number} - {row.action}")
+    print(f"  Title: {row.pr_title}")
+```
 
-1. If you don't already have a Google project...
-    a. **Login** into the Google Developer Console
-    b. **Create a project** and activate the BigQuery API
-3. [Go to BigQuery](https://console.cloud.google.com/bigquery), and select your newly created project from the dropdown in the header bar.
-Execute your first query against the public "githubarchive" dataset. You can just copy and paste the query below and run, once you've selected your project. You can also look through the public dataset itself, but you will not have permission to execute queries on behalf of the project.
+**Expected Output (if PR exists)**:
+```
+2025-06-15 14:23:11 UTC: PR #123 - opened
+  Title: Add new feature
+2025-06-20 09:45:22 UTC: PR #123 - closed
+  Title: Add new feature
+```
 
-1. If you don't already have a Google project...
-    a. **Login** into the Google Developer Console
-    b. **Create a project** and activate the BigQuery API
-2. **Google Cloud Credentials**: create a service account with BigQuery access and download the JSON credenetials.
+**Interpretation**:
+- **No results** → Claim disproven (no PR activity found)
+- **Results found** → Claim verified, proceed with detailed analysis
 
-Google provides a free tier with 1 TB of data processed per month free.
+## Setup
 
-**Standard Setup Pattern**:
+### Prerequisites
+
+1. **Google Cloud Project**:
+   - Login to [Google Developer Console](https://console.cloud.google.com/)
+   - Create a project and activate BigQuery API
+   - Create a service account with `BigQuery User` role
+   - Download JSON credentials file
+
+2. **Install BigQuery Client**:
+```bash
+pip install google-cloud-bigquery google-auth
+```
+
+### Initialize Client
+
 ```python
 from google.cloud import bigquery
 from google.oauth2 import service_account
@@ -104,6 +149,10 @@ client = bigquery.Client(
     project=credentials.project_id
 )
 ```
+
+**Free Tier**: Google provides 1 TB of data processed per month free.
+
+## Schema Reference
 
 ### Table Organization
 
@@ -136,7 +185,7 @@ org.id            -- Organization ID
 payload           -- JSON string with event-specific data
 ```
 
-**Payload Field**: JSON-encoded string containing event-specific details. Must be parsed with `JSON_EXTRACT_SCALAR()` or loaded with `json.loads()` in Python.
+**Payload Field**: JSON-encoded string containing event-specific details. Must be parsed with `JSON_EXTRACT_SCALAR()` in SQL or `json.loads()` in Python.
 
 ### Event Types Reference
 
@@ -211,7 +260,6 @@ JSON_EXTRACT_SCALAR(payload, '$.issue.body')
 ```
 
 **IssueCommentEvent** - Comment on issue or pull request
-
 **PullRequestReviewEvent** - PR review submitted
 **PullRequestReviewCommentEvent** - Comment on PR diff
 
@@ -222,51 +270,64 @@ JSON_EXTRACT_SCALAR(payload, '$.issue.body')
 **MemberEvent** - Collaborator added/removed
 **PublicEvent** - Repository made public
 
-### Learn More
+## Investigation Patterns
 
-Detailed information in case a drill-down is needed:
-- About GH Archive https://www.gharchive.org/
-- Full schema of GitHub events https://docs.github.com/en/rest/using-the-rest-api/github-event-types
+### Deleted PRs
 
-## Real-World Investigation Patterns
+**Scenario**: Media claims attacker submitted a PR in "late June" containing malicious code, but PR is now deleted and cannot be found on github.com.
 
-### Find Deleted PRs
-
-**Scenario**: Media claims an attacker has submitted a PR in "late June" containing malicious code, but PR is now deleted and cannot be found on github.com.
-
-**Forensic Approach**:
-```sql
--- Search for ALL PR events by suspected actor in June 2025
+**Step 1: Query Archive**
+```python
+query = """
 SELECT
     type,
     created_at,
     repo.name,
-    payload
+    JSON_EXTRACT_SCALAR(payload, '$.action') as action,
+    JSON_EXTRACT_SCALAR(payload, '$.pull_request.number') as pr_number,
+    JSON_EXTRACT_SCALAR(payload, '$.pull_request.title') as pr_title
 FROM `githubarchive.day.202506*`
 WHERE
     actor.login = 'suspected-actor'
     AND repo.name = 'target/repository'
     AND type = 'PullRequestEvent'
 ORDER BY created_at
+"""
+
+results = client.query(query)
+pr_events = list(results)
+```
+
+**Step 2: Analyze Results**
+```python
+if not pr_events:
+    print("❌ CLAIM DISPROVEN: No PR activity found in June 2025")
+else:
+    for event in pr_events:
+        print(f"✓ VERIFIED: PR #{event.pr_number} {event.action} on {event.created_at}")
+        print(f"  Title: {event.pr_title}")
+        print(f"  Repo: {event.repo_name}")
 ```
 
 **Evidence Validation**:
-- If claim is TRUE: Archive will show PullRequestEvent with action='opened'
-- If claim is FALSE: No events found, claim is disproven
-- **Investigation Outcome**: Can definitively verify or refute timeline claims
+- **Claim TRUE**: Archive shows `PullRequestEvent` with `action='opened'`
+- **Claim FALSE**: No events found → claim disproven
+- **Investigation Outcome**: Definitively verify or refute timeline claims
 
-**Real Example**: Amazon Q investigation verified no PR from the attacker's account in late June 2025, disproving media's claim of malicious code commited to the repository via deleted PR.
+**Real Example**: Amazon Q investigation verified no PR from attacker's account in late June 2025, disproving media's claim of malicious code committed via deleted PR.
 
 ### Deleted Repository Forensics
 
 **Scenario**: Threat actor creates staging repository, pushes malicious code, then deletes repo to cover tracks.
 
-**Forensic Approach**:
-```sql
--- Find repository creation and all push events
+**Step 1: Find Repository Activity**
+```python
+query = """
 SELECT
     type,
     created_at,
+    JSON_EXTRACT_SCALAR(payload, '$.ref') as ref,
+    JSON_EXTRACT_SCALAR(payload, '$.repository.name') as repo_name,
     payload
 FROM `githubarchive.day.2025*`
 WHERE
@@ -277,28 +338,50 @@ WHERE
         OR repo.name LIKE 'threat-actor/staging-repo'
     )
 ORDER BY created_at
+"""
+
+results = client.query(query)
+```
+
+**Step 2: Extract Commit SHAs**
+```python
+import json
+
+commits = []
+for row in results:
+    if row.type == 'PushEvent':
+        payload_data = json.loads(row.payload)
+        for commit in payload_data.get('commits', []):
+            commits.append({
+                'sha': commit['sha'],
+                'message': commit['message'],
+                'timestamp': row.created_at
+            })
+
+for c in commits:
+    print(f"{c['timestamp']}: {c['sha'][:8]} - {c['message']}")
 ```
 
 **Evidence Recovery**:
-- CreateEvent reveals repository creation timestamp
-- PushEvents contain commit SHAs and metadata
+- `CreateEvent` reveals repository creation timestamp
+- `PushEvent` records contain commit SHAs and metadata
 - Commit SHAs can be used to recover code content via other archives or forks
 - **Investigation Outcome**: Complete reconstruction of attacker's staging infrastructure
 
-**Real Example**: lkmanka58/code_whisperer repository deleted after attack, but GitHub Archive revealed June 13 creation with 3 commits containing AWS IAM role assumption attempts.
+**Real Example**: `lkmanka58/code_whisperer` repository deleted after attack, but GitHub Archive revealed June 13 creation with 3 commits containing AWS IAM role assumption attempts.
 
 ### Deleted Tag Analysis
 
 **Scenario**: Malicious tag used for payload delivery, then deleted to hide evidence.
 
-**Forensic Approach**:
+**Step 1: Search for Tag Events**
 ```sql
--- Search for tag creation and deletion events
 SELECT
     type,
     created_at,
     actor.login,
-    payload
+    JSON_EXTRACT_SCALAR(payload, '$.ref') as tag_name,
+    JSON_EXTRACT_SCALAR(payload, '$.ref_type') as ref_type
 FROM `githubarchive.day.20250713`
 WHERE
     repo.name = 'target/repository'
@@ -308,23 +391,22 @@ ORDER BY created_at
 ```
 
 **Timeline Reconstruction**:
-```json
-{
-  "19:41:44 UTC": "CreateEvent - tag 'stability' created by aws-toolkit-automation",
-  "20:30:24 UTC": "PushEvent - malicious commit references tag",
-  "Next day": "DeleteEvent - tag 'stability' deleted (cleanup attempt)"
-}
+```
+2025-07-13 19:41:44 UTC | CreateEvent | aws-toolkit-automation | tag 'stability'
+2025-07-13 20:30:24 UTC | PushEvent   | aws-toolkit-automation | commit references tag
+2025-07-14 08:15:33 UTC | DeleteEvent | aws-toolkit-automation | tag 'stability' deleted
 ```
 
-**Real Example**: Amazon Q attack used 'stability' tag for malicious payload delivery. Tag was deleted, but CreateEvent in GitHub Archive preserved creation timestamp and actor, proving 48-hour staging window.
+**Analysis**: 48-hour window between tag creation and deletion reveals staging period for attack infrastructure.
+
+**Real Example**: Amazon Q attack used 'stability' tag for malicious payload delivery. Tag was deleted, but `CreateEvent` in GitHub Archive preserved creation timestamp and actor, proving 48-hour staging window.
 
 ### Deleted Branch Reconstruction
 
 **Scenario**: Attacker creates development branch with malicious code, pushes commits, then deletes branch after merging or to cover tracks.
 
-**Forensic Approach**:
+**Step 1: Find Branch Lifecycle**
 ```sql
--- Step 1: Find branch creation and deletion events
 SELECT
     type,
     created_at,
@@ -339,15 +421,12 @@ WHERE
 ORDER BY created_at
 ```
 
-**Commit SHA Recovery**:
+**Step 2: Extract All Commit SHAs from Deleted Branch**
 ```sql
--- Step 2: Extract ALL commit SHAs, messages, and authors from deleted branch
 SELECT
     created_at,
     actor.login as pusher,
     JSON_EXTRACT_SCALAR(payload, '$.ref') as branch_ref,
-    JSON_EXTRACT(payload, '$.commits') as commits_json,
-    -- Extract individual commit details
     JSON_EXTRACT_SCALAR(commit, '$.sha') as commit_sha,
     JSON_EXTRACT_SCALAR(commit, '$.message') as commit_message,
     JSON_EXTRACT_SCALAR(commit, '$.author.name') as author_name,
@@ -362,7 +441,7 @@ ORDER BY created_at
 ```
 
 **Evidence Recovery**:
-- **Commit SHAs**: All commit identifiers permanently recorded in PushEvent payload
+- **Commit SHAs**: All commit identifiers permanently recorded in `PushEvent` payload
 - **Commit Messages**: Full commit messages preserved in commits array
 - **Author Metadata**: Name and email from commit author field
 - **Pusher Identity**: Actor who executed the push operation
@@ -379,9 +458,9 @@ ORDER BY created_at
 
 **Scenario**: Suspicious commits appear under automation account name. Determine if they came from legitimate GitHub Actions workflow execution or direct API abuse with compromised token.
 
-**Forensic Approach**:
-```sql
--- Step 1: Search for workflow events during suspicious commit window
+**Step 1: Search for Workflow Events During Suspicious Window**
+```python
+query = """
 SELECT
     type,
     created_at,
@@ -389,48 +468,100 @@ SELECT
     JSON_EXTRACT_SCALAR(payload, '$.workflow_run.name') as workflow_name,
     JSON_EXTRACT_SCALAR(payload, '$.workflow_run.head_sha') as commit_sha,
     JSON_EXTRACT_SCALAR(payload, '$.workflow_run.conclusion') as conclusion
-FROM `githubarchive.day.YYYYMMDD`
+FROM `githubarchive.day.20250713`
 WHERE
     repo.name = 'org/repository'
     AND type IN ('WorkflowRunEvent', 'WorkflowJobEvent')
-    AND created_at >= 'YYYY-MM-DDTHH:MM:SSZ'  -- Start of suspicious window
-    AND created_at <= 'YYYY-MM-DDTHH:MM:SSZ'  -- End of suspicious window
+    AND created_at >= '2025-07-13T20:25:00Z'
+    AND created_at <= '2025-07-13T20:35:00Z'
 ORDER BY created_at
+"""
+
+workflow_events = list(client.query(query))
 ```
 
-**Baseline Pattern Analysis**:
-```sql
--- Step 2: Establish normal automation behavior patterns
+**Step 2: Establish Baseline Pattern**
+```python
+baseline_query = """
 SELECT
     type,
     created_at,
     actor.login,
-    JSON_EXTRACT_SCALAR(payload, '$.workflow_run.name') as workflow_name,
-    JSON_EXTRACT_SCALAR(payload, '$.workflow_run.head_sha') as commit_sha
-FROM `githubarchive.day.YYYYMMDD*`
+    JSON_EXTRACT_SCALAR(payload, '$.workflow_run.name') as workflow_name
+FROM `githubarchive.day.20250713`
 WHERE
     repo.name = 'org/repository'
     AND actor.login = 'automation-account'
     AND type = 'WorkflowRunEvent'
 ORDER BY created_at
+"""
+
+baseline = list(client.query(baseline_query))
+print(f"Total workflows for day: {len(baseline)}")
 ```
 
-**Commit-to-Workflow Correlation**:
-```sql
--- Step 3: Check if specific commit SHA has associated workflow
-SELECT
-    w.type,
-    w.created_at,
-    w.actor.login,
-    JSON_EXTRACT_SCALAR(w.payload, '$.workflow_run.name') as workflow_name,
-    JSON_EXTRACT_SCALAR(w.payload, '$.workflow_run.head_sha') as workflow_commit
-FROM `githubarchive.day.YYYYMMDD` w
-WHERE
-    w.repo.name = 'org/repository'
-    AND w.type = 'WorkflowRunEvent'
-    AND JSON_EXTRACT_SCALAR(w.payload, '$.workflow_run.head_sha') = 'suspicious-commit-sha'
+**Step 3: Analyze Results**
+```python
+if not workflow_events:
+    print("🚨 DIRECT API ATTACK DETECTED")
+    print("No WorkflowRunEvent during suspicious commit window")
+    print("Commit was NOT from legitimate workflow execution")
+else:
+    print("✓ Legitimate workflow execution detected")
+    for event in workflow_events:
+        print(f"{event.created_at}: {event.workflow_name} - {event.conclusion}")
 ```
 
-**Investigation Outcome**: Absence of workflow events = Direct API attack with stolen token
+**Expected Results if Legitimate Workflow**:
+```
+2025-07-13 20:30:15 UTC | WorkflowRunEvent | deploy-automation | requested
+2025-07-13 20:30:24 UTC | PushEvent        | aws-toolkit-automation | refs/heads/main
+2025-07-13 20:31:08 UTC | WorkflowRunEvent | deploy-automation | completed
+```
 
-**Real Example**: Amazon Q investigation needed to determine if malicious commit 678851bbe9776228f55e0460e66a6167ac2a1685 (pushed July 13, 2025 20:30:24 UTC by aws-toolkit-automation) came from compromised workflow or direct API abuse. GitHub Archive query showed ZERO WorkflowRunEvent or WorkflowJobEvent records during the 20:25-20:35 UTC window. Baseline analysis revealed the same automation account had 18 workflows that day, all clustered in 20:48-21:02 UTC. The 9+ hour gap and complete workflow absence during the malicious commit proved direct API attack, not workflow compromise.
+**Expected Results if Direct API Abuse**:
+```
+2025-07-13 20:30:24 UTC | PushEvent | aws-toolkit-automation | refs/heads/main
+[NO WORKFLOW EVENTS IN ±10 MINUTE WINDOW]
+```
+
+**Investigation Outcome**: Absence of `WorkflowRunEvent` = Direct API attack with stolen token
+
+**Real Example**: Amazon Q investigation needed to determine if malicious commit `678851bbe9776228f55e0460e66a6167ac2a1685` (pushed July 13, 2025 20:30:24 UTC by `aws-toolkit-automation`) came from compromised workflow or direct API abuse. GitHub Archive query showed ZERO `WorkflowRunEvent` or `WorkflowJobEvent` records during the 20:25-20:35 UTC window. Baseline analysis revealed the same automation account had 18 workflows that day, all clustered in 20:48-21:02 UTC. The temporal gap and complete workflow absence during the malicious commit proved direct API attack, not workflow compromise.
+
+## Troubleshooting
+
+**Permission denied errors**:
+- Verify service account has `BigQuery User` role
+- Check credentials file path is correct
+- Ensure BigQuery API is enabled in Google Cloud project
+
+**Query exceeds free tier (>1TB)**:
+- Use daily tables instead of wildcard: `githubarchive.day.20250615`
+- Add date filters: `WHERE created_at >= '2025-06-01' AND created_at < '2025-07-01'`
+- Limit columns: Select only needed fields, not `SELECT *`
+- Use monthly tables for broader searches: `githubarchive.month.202506`
+
+**No results for known event**:
+- Verify date range (archive starts Feb 12, 2011)
+- Check timezone (GitHub Archive uses UTC)
+- Confirm `actor.login` spelling (case-sensitive)
+- Some events may take up to 1 hour to appear (hourly updates)
+
+**Payload extraction returns NULL**:
+- Verify JSON path exists with `JSON_EXTRACT()` before using `JSON_EXTRACT_SCALAR()`
+- Check event type has that payload field (not all events have all fields)
+- Inspect raw payload: `SELECT payload FROM ... LIMIT 1`
+
+**Query timeout or slow performance**:
+- Add `repo.name` filter when possible (significantly reduces data scanned)
+- Use specific date ranges instead of wildcards
+- Consider using monthly aggregated tables for long-term analysis
+- Partition queries by date and run in parallel
+
+## Learn More
+
+- **GH Archive Documentation**: https://www.gharchive.org/
+- **GitHub Event Types Schema**: https://docs.github.com/en/rest/using-the-rest-api/github-event-types
+- **BigQuery Documentation**: https://cloud.google.com/bigquery/docs
+- **BigQuery SQL Reference**: https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax
