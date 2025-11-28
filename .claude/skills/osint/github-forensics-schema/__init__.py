@@ -3,10 +3,12 @@ GitHub Forensics Verifiable Evidence Schema
 
 Pydantic models for verifiable GitHub forensic evidence.
 All evidence types can be independently verified through:
-- GitHub API
-- GH Archive (BigQuery)
-- Wayback Machine
-- Git
+- GitHub API (point-in-time observations)
+- GH Archive/BigQuery (immutable event stream)
+- Wayback Machine (point-in-time snapshots)
+- Git (local repository queries)
+
+Every evidence piece answers: WHEN, WHO, WHAT
 """
 
 from .schema import (
@@ -22,27 +24,30 @@ from .schema import (
     GitHubActor,
     GitHubRepository,
     EvidenceBase,
-    # Commit evidence
+    GitHubEventBase,
+    # GH Archive Events (commits come via PushEvent)
+    PushEventCommit,
+    PushEvent,
+    PullRequestEvent,
+    IssueEvent,
+    IssueCommentEvent,
+    CreateEvent,
+    DeleteEvent,
+    ForkEvent,
+    WorkflowRunEvent,
+    ReleaseEvent,
+    WatchEvent,
+    MemberEvent,
+    PublicEvent,
+    # API Observations (point-in-time queries)
     CommitAuthor,
     CommitSignature,
     CommitFileChange,
-    CommitEvidence,
-    DeletedCommitEvidence,
-    # GH Archive events
-    PushEventCommit,
-    PushEventEvidence,
-    PullRequestEvidence,
-    IssueEvidence,
-    IssueCommentEvidence,
-    CreateDeleteEventEvidence,
-    ForkEventEvidence,
-    WorkflowRunEvidence,
-    ReleaseEvidence,
-    WatchEvidence,
-    MemberEvidence,
-    # Wayback evidence
+    CommitObservation,
+    ForcesPushedCommitReference,
+    # Wayback Snapshots (point-in-time archived pages)
     WaybackSnapshot,
-    WaybackEvidence,
+    WaybackObservation,
     RecoveredIssueContent,
     RecoveredFileContent,
     RecoveredWikiContent,
@@ -52,7 +57,9 @@ from .schema import (
     ActorProfile,
     IOC,
     Investigation,
-    # Type alias
+    # Type aliases
+    GitHubArchiveEvent,
+    Observation,
     AnyEvidence,
 )
 
@@ -69,27 +76,30 @@ __all__ = [
     "GitHubActor",
     "GitHubRepository",
     "EvidenceBase",
-    # Commit evidence
+    "GitHubEventBase",
+    # GH Archive Events
+    "PushEventCommit",
+    "PushEvent",
+    "PullRequestEvent",
+    "IssueEvent",
+    "IssueCommentEvent",
+    "CreateEvent",
+    "DeleteEvent",
+    "ForkEvent",
+    "WorkflowRunEvent",
+    "ReleaseEvent",
+    "WatchEvent",
+    "MemberEvent",
+    "PublicEvent",
+    # API Observations
     "CommitAuthor",
     "CommitSignature",
     "CommitFileChange",
-    "CommitEvidence",
-    "DeletedCommitEvidence",
-    # GH Archive events
-    "PushEventCommit",
-    "PushEventEvidence",
-    "PullRequestEvidence",
-    "IssueEvidence",
-    "IssueCommentEvidence",
-    "CreateDeleteEventEvidence",
-    "ForkEventEvidence",
-    "WorkflowRunEvidence",
-    "ReleaseEvidence",
-    "WatchEvidence",
-    "MemberEvidence",
-    # Wayback evidence
+    "CommitObservation",
+    "ForcesPushedCommitReference",
+    # Wayback Snapshots
     "WaybackSnapshot",
-    "WaybackEvidence",
+    "WaybackObservation",
     "RecoveredIssueContent",
     "RecoveredFileContent",
     "RecoveredWikiContent",
@@ -99,6 +109,8 @@ __all__ = [
     "ActorProfile",
     "IOC",
     "Investigation",
-    # Type alias
+    # Type aliases
+    "GitHubArchiveEvent",
+    "Observation",
     "AnyEvidence",
 ]
