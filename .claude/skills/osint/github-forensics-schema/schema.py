@@ -1,18 +1,17 @@
 """
 GitHub Forensics Verifiable Evidence Schema
 
-Strictly defines verifiable GitHub forensic evidence that can be confirmed
-through public sources: GitHub API, GH Archive (BigQuery), Git, and Wayback Machine.
+Strictly defines verifiable GitHub forensic evidence.
 
-All evidence types are designed to be independently verifiable - no guesses.
+EVIDENCE TYPES:
+1. Event    - Something happened (when, who, what)
+             Sources: GH Archive, git log
+2. Content  - Something we found (when_found, who?, what, where_found, found_by)
+             Sources: GH Archive, GitHub API, Wayback
+3. IOC      - Indicator of Compromise (same as content)
+             Sources: Security blogs, extracted from content
 
-EVIDENCE CATEGORIES:
-1. GitHub Archive Events - Real-time events recorded in BigQuery (PushEvent contains commits)
-2. GitHub API Observations - Point-in-time queries to GitHub API
-3. Wayback Snapshots - Point-in-time archived web pages
-4. Git Observations - Local git repository queries
-
-Every piece of evidence answers: WHEN, WHO, WHAT
+All evidence is independently verifiable - no guesses.
 """
 
 from __future__ import annotations
@@ -25,22 +24,23 @@ from pydantic import BaseModel, Field, HttpUrl
 
 
 # =============================================================================
-# ENUMS - Evidence Sources and Types
+# ENUMS
 # =============================================================================
 
 
 class EvidenceSource(str, Enum):
-    """Source from which evidence was obtained and can be verified."""
+    """Where evidence was obtained from."""
 
-    GITHUB_API = "github_api"  # GitHub REST/GraphQL API (point-in-time observation)
-    GITHUB_WEB = "github_web"  # GitHub web interface (commit pages, etc.)
-    GHARCHIVE = "gharchive"  # GH Archive via BigQuery (immutable event stream)
-    WAYBACK = "wayback"  # Internet Archive Wayback Machine (point-in-time snapshot)
-    GIT_LOCAL = "git_local"  # Local git repository operations
+    GHARCHIVE = "gharchive"  # GH Archive via BigQuery
+    GIT_LOG = "git_log"  # Local git log/show
+    GITHUB_API = "github_api"  # GitHub REST/GraphQL API
+    GITHUB_WEB = "github_web"  # GitHub web interface
+    WAYBACK = "wayback"  # Internet Archive Wayback Machine
+    SECURITY_BLOG = "security_blog"  # Security research blogs/reports
 
 
 class EventType(str, Enum):
-    """GitHub event types as recorded in GH Archive."""
+    """GitHub event types from GH Archive."""
 
     PUSH = "PushEvent"
     PULL_REQUEST = "PullRequestEvent"
@@ -62,7 +62,7 @@ class EventType(str, Enum):
 
 
 class RefType(str, Enum):
-    """Git reference types for create/delete events."""
+    """Git reference types."""
 
     BRANCH = "branch"
     TAG = "tag"
@@ -76,12 +76,8 @@ class PRAction(str, Enum):
     CLOSED = "closed"
     REOPENED = "reopened"
     EDITED = "edited"
-    ASSIGNED = "assigned"
-    UNASSIGNED = "unassigned"
-    LABELED = "labeled"
-    UNLABELED = "unlabeled"
     SYNCHRONIZE = "synchronize"
-    REVIEW_REQUESTED = "review_requested"
+    MERGED = "merged"
 
 
 class IssueAction(str, Enum):
@@ -91,11 +87,6 @@ class IssueAction(str, Enum):
     CLOSED = "closed"
     REOPENED = "reopened"
     EDITED = "edited"
-    ASSIGNED = "assigned"
-    UNASSIGNED = "unassigned"
-    LABELED = "labeled"
-    UNLABELED = "unlabeled"
-    TRANSFERRED = "transferred"
     DELETED = "deleted"
 
 
@@ -107,773 +98,249 @@ class WorkflowConclusion(str, Enum):
     CANCELLED = "cancelled"
     SKIPPED = "skipped"
     TIMED_OUT = "timed_out"
-    ACTION_REQUIRED = "action_required"
-    NEUTRAL = "neutral"
-    STALE = "stale"
+
+
+class IOCType(str, Enum):
+    """Types of Indicators of Compromise."""
+
+    COMMIT_SHA = "commit_sha"
+    FILE_PATH = "file_path"
+    EMAIL = "email"
+    USERNAME = "username"
+    REPOSITORY = "repository"
+    TAG_NAME = "tag_name"
+    BRANCH_NAME = "branch_name"
+    WORKFLOW_NAME = "workflow_name"
+    IP_ADDRESS = "ip_address"
+    DOMAIN = "domain"
+    API_KEY = "api_key"
+    SECRET = "secret"
+    URL = "url"
+    OTHER = "other"
 
 
 # =============================================================================
-# BASE MODELS - Common Fields
+# COMMON MODELS
 # =============================================================================
-
-
-class VerificationInfo(BaseModel):
-    """Information required to independently verify evidence."""
-
-    source: EvidenceSource = Field(
-        ..., description="Primary source for verification"
-    )
-    verified_at: datetime | None = Field(
-        default=None, description="When this evidence was verified"
-    )
-    verification_url: HttpUrl | None = Field(
-        default=None, description="Direct URL to verify this evidence"
-    )
-    bigquery_table: str | None = Field(
-        default=None,
-        description="BigQuery table for GH Archive verification (e.g., githubarchive.day.20250713)",
-    )
-    verification_query: str | None = Field(
-        default=None, description="SQL query to reproduce GH Archive evidence"
-    )
 
 
 class GitHubActor(BaseModel):
-    """GitHub user/actor information - the WHO."""
+    """GitHub user/actor - the WHO."""
 
     login: str = Field(..., description="GitHub username")
-    id: int | None = Field(default=None, description="GitHub user ID (stable)")
-    avatar_url: HttpUrl | None = Field(default=None, description="Avatar URL")
-    is_bot: bool = Field(
-        default=False, description="Whether this is a bot/automation account"
-    )
+    id: int | None = Field(default=None, description="GitHub user ID")
+    is_bot: bool = Field(default=False, description="Is automation account")
 
 
 class GitHubRepository(BaseModel):
-    """GitHub repository reference - part of WHERE/WHAT."""
+    """GitHub repository reference."""
 
-    owner: str = Field(..., description="Repository owner (user or org)")
+    owner: str = Field(..., description="Repository owner")
     name: str = Field(..., description="Repository name")
     full_name: str = Field(..., description="Full name (owner/name)")
-    id: int | None = Field(default=None, description="GitHub repository ID")
-    is_fork: bool = Field(default=False, description="Whether this is a fork")
-    parent_full_name: str | None = Field(
-        default=None, description="Parent repo if this is a fork"
+    id: int | None = Field(default=None, description="Repository ID")
+
+
+class VerificationInfo(BaseModel):
+    """How to independently verify this evidence."""
+
+    source: EvidenceSource = Field(..., description="Primary source")
+    url: HttpUrl | None = Field(default=None, description="Direct verification URL")
+    bigquery_table: str | None = Field(
+        default=None, description="GH Archive table (e.g., githubarchive.day.20250713)"
     )
-
-
-class EvidenceBase(BaseModel):
-    """
-    Base class for all verifiable evidence.
-
-    Every evidence piece MUST answer:
-    - WHEN: timestamp of the event/observation
-    - WHO: actor who performed the action (where applicable)
-    - WHAT: description of what happened
-    """
-
-    evidence_id: str = Field(
-        ..., description="Unique identifier for this evidence piece"
-    )
-
-    # WHEN - temporal anchor
-    when: datetime = Field(
-        ..., description="When this event occurred or observation was made (UTC)"
-    )
-
-    # WHAT - summary of the evidence
-    what: str = Field(
-        ..., description="Brief description of what this evidence shows"
-    )
-
-    # Verification
-    verification: VerificationInfo = Field(
-        ..., description="How to verify this evidence"
-    )
-
-    notes: str | None = Field(
-        default=None, description="Investigator notes on this evidence"
-    )
+    query: str | None = Field(default=None, description="SQL/API query to reproduce")
+    verified_at: datetime | None = Field(default=None, description="When verified")
 
 
 # =============================================================================
-# GITHUB ARCHIVE EVENTS - Immutable event stream from BigQuery
+# EVENT - Something that happened
 #
-# These are EVENTS - something happened at a specific time.
-# Commits are delivered via PushEvent, not as separate events.
+# Has: when, who, what
+# Sources: GH Archive, git log
 # =============================================================================
 
 
-class GitHubEventBase(EvidenceBase):
+class Event(BaseModel):
     """
-    Base class for all GH Archive events.
+    Base class for events - something that happened.
 
-    Events are immutable records from GitHub's event stream.
-    All events have: WHEN (created_at), WHO (actor), WHAT (type + payload)
-    """
-
-    # WHO performed the action
-    actor: GitHubActor = Field(..., description="Who performed this action")
-
-    # WHERE it happened
-    repository: GitHubRepository = Field(..., description="Target repository")
-
-
-class PushEventCommit(BaseModel):
-    """
-    Individual commit within a PushEvent.
-
-    NOTE: This is NOT a separate event - commits come embedded in PushEvents.
-    To get full commit details, use GitHub API with the SHA.
+    WHEN: When it happened
+    WHO: Who did it
+    WHAT: What they did
     """
 
-    sha: str = Field(..., description="Commit SHA (use to fetch full details via API)")
-    message: str = Field(..., description="Commit message")
-    author_name: str = Field(..., description="Author name from git")
-    author_email: str = Field(..., description="Author email from git")
-    distinct: bool = Field(
-        default=True, description="Whether commit is distinct to this push"
-    )
+    evidence_id: str = Field(..., description="Unique evidence ID")
 
-
-class PushEvent(GitHubEventBase):
-    """
-    PushEvent from GH Archive - someone pushed commits to a repository.
-
-    WHEN: created_at timestamp
-    WHO: actor.login (the pusher)
-    WHAT: Pushed N commits to {ref}, moving from {before} to {after}
-
-    IMPORTANT: Commits are embedded here, not separate events.
-    Force pushes have size=0 and empty commits array.
-
-    Verifiable via BigQuery:
-    SELECT * FROM `githubarchive.day.YYYYMMDD`
-    WHERE type = 'PushEvent' AND repo.name = '{repo}'
-    """
-
-    evidence_type: Literal["push_event"] = "push_event"
-
-    # WHAT happened
-    ref: str = Field(..., description="Git ref pushed to (e.g., refs/heads/main)")
-    before_sha: str = Field(
-        ..., description="SHA before push - use to detect force-pushed commits"
-    )
-    after_sha: str = Field(..., description="SHA after push (new HEAD)")
-    size: int = Field(..., description="Number of commits in push (0 = force push)")
-    commits: list[PushEventCommit] = Field(
-        default_factory=list,
-        description="Commits in this push (empty for force push)"
-    )
-    is_force_push: bool = Field(
-        default=False,
-        description="True if size=0, indicating history was rewritten",
-    )
-
-
-class PullRequestEvent(GitHubEventBase):
-    """
-    PullRequestEvent from GH Archive - PR opened, closed, merged, etc.
-
-    WHEN: created_at timestamp
-    WHO: actor.login (who performed the action)
-    WHAT: {action} PR #{number} "{title}"
-
-    Recovers deleted PRs including title, body, and merge status.
-    """
-
-    evidence_type: Literal["pull_request_event"] = "pull_request_event"
-
-    # WHAT happened
-    action: PRAction = Field(..., description="What happened to the PR")
-    pr_number: int = Field(..., description="Pull request number")
-    pr_title: str = Field(..., description="PR title")
-    pr_body: str | None = Field(default=None, description="PR body/description")
-    head_sha: str | None = Field(default=None, description="Head commit SHA")
-    base_sha: str | None = Field(default=None, description="Base commit SHA")
-    head_ref: str | None = Field(default=None, description="Head branch name")
-    base_ref: str | None = Field(default=None, description="Base branch name")
-    merged: bool = Field(default=False, description="Whether PR was merged")
-    merged_by: GitHubActor | None = Field(
-        default=None, description="Who merged the PR"
-    )
-    merge_commit_sha: str | None = Field(
-        default=None, description="Merge commit SHA if merged"
-    )
-
-    # Recovery metadata
-    is_deleted_from_github: bool = Field(
-        default=False,
-        description="PR no longer exists on GitHub (recovered from archive)",
-    )
-
-
-class IssueEvent(GitHubEventBase):
-    """
-    IssuesEvent from GH Archive - issue opened, closed, etc.
-
-    WHEN: created_at timestamp
-    WHO: actor.login (who performed the action)
-    WHAT: {action} issue #{number} "{title}"
-
-    Recovers deleted issues including title and body text.
-    """
-
-    evidence_type: Literal["issue_event"] = "issue_event"
-
-    # WHAT happened
-    action: IssueAction = Field(..., description="What happened to the issue")
-    issue_number: int = Field(..., description="Issue number")
-    issue_title: str = Field(..., description="Issue title")
-    issue_body: str | None = Field(default=None, description="Issue body text")
-    labels: list[str] = Field(default_factory=list, description="Issue labels")
-
-    # Recovery metadata
-    is_deleted_from_github: bool = Field(
-        default=False,
-        description="Issue no longer exists on GitHub (recovered from archive)",
-    )
-
-
-class IssueCommentEvent(GitHubEventBase):
-    """
-    IssueCommentEvent from GH Archive - comment on issue or PR.
-
-    WHEN: created_at timestamp
-    WHO: actor.login (comment author)
-    WHAT: {action} comment on #{issue_number}
-
-    Preserves comment text even if deleted from GitHub.
-    """
-
-    evidence_type: Literal["issue_comment_event"] = "issue_comment_event"
-
-    # WHAT happened
-    action: Literal["created", "edited", "deleted"] = Field(
-        ..., description="What happened to the comment"
-    )
-    issue_number: int = Field(..., description="Parent issue/PR number")
-    comment_id: int = Field(..., description="Comment ID")
-    comment_body: str = Field(..., description="Comment text content")
-    is_on_pull_request: bool = Field(
-        default=False, description="Whether comment is on a PR vs issue"
-    )
-
-
-class CreateEvent(GitHubEventBase):
-    """
-    CreateEvent from GH Archive - branch, tag, or repository created.
-
-    WHEN: created_at timestamp
-    WHO: actor.login (creator)
-    WHAT: Created {ref_type} "{ref_name}"
-    """
-
-    evidence_type: Literal["create_event"] = "create_event"
-
-    # WHAT was created
-    ref_type: RefType = Field(..., description="Type: branch, tag, or repository")
-    ref_name: str = Field(..., description="Name of the branch/tag")
-    default_branch: str | None = Field(
-        default=None, description="Default branch (for repository creation)"
-    )
-
-
-class DeleteEvent(GitHubEventBase):
-    """
-    DeleteEvent from GH Archive - branch or tag deleted.
-
-    WHEN: created_at timestamp
-    WHO: actor.login (deleter)
-    WHAT: Deleted {ref_type} "{ref_name}"
-    """
-
-    evidence_type: Literal["delete_event"] = "delete_event"
-
-    # WHAT was deleted
-    ref_type: RefType = Field(..., description="Type: branch or tag")
-    ref_name: str = Field(..., description="Name of the deleted branch/tag")
-
-
-class ForkEvent(GitHubEventBase):
-    """
-    ForkEvent from GH Archive - repository forked.
-
-    WHEN: created_at timestamp
-    WHO: actor.login (forker)
-    WHAT: Forked {source} to {fork}
-
-    Records fork relationships even after parent/fork deletion.
-    """
-
-    evidence_type: Literal["fork_event"] = "fork_event"
-
-    # WHAT happened (repository field is the source)
-    fork_repository: GitHubRepository = Field(
-        ..., description="Newly created fork"
-    )
-
-
-class WorkflowRunEvent(GitHubEventBase):
-    """
-    WorkflowRunEvent from GH Archive - GitHub Actions workflow execution.
-
-    WHEN: created_at timestamp
-    WHO: actor.login (triggering user/bot)
-    WHAT: Workflow "{name}" {action} on {head_sha}
-
-    CRITICAL for distinguishing legitimate workflow execution
-    from direct API abuse with stolen tokens. Absence of WorkflowRunEvent
-    during a suspicious commit = direct API attack, not workflow.
-    """
-
-    evidence_type: Literal["workflow_run_event"] = "workflow_run_event"
-
-    # WHAT happened
-    action: Literal["requested", "completed", "in_progress"] = Field(
-        ..., description="Workflow run lifecycle stage"
-    )
-    workflow_name: str = Field(..., description="Workflow name")
-    workflow_path: str | None = Field(
-        default=None, description="Path to workflow file (.github/workflows/...)"
-    )
-    head_sha: str = Field(..., description="Commit SHA being processed")
-    head_branch: str | None = Field(default=None, description="Branch name")
-    conclusion: WorkflowConclusion | None = Field(
-        default=None, description="Run conclusion (for completed events)"
-    )
-    run_id: int | None = Field(default=None, description="Workflow run ID")
-
-
-class ReleaseEvent(GitHubEventBase):
-    """
-    ReleaseEvent from GH Archive - release published/created/etc.
-
-    WHEN: created_at timestamp
-    WHO: actor.login (release author)
-    WHAT: {action} release "{tag_name}"
-    """
-
-    evidence_type: Literal["release_event"] = "release_event"
-
-    # WHAT happened
-    action: Literal["published", "created", "edited", "deleted", "prereleased", "released"] = Field(
-        ..., description="Release action"
-    )
-    tag_name: str = Field(..., description="Release tag name")
-    release_name: str | None = Field(default=None, description="Release title")
-    release_body: str | None = Field(
-        default=None, description="Release description/notes"
-    )
-    prerelease: bool = Field(default=False, description="Whether prerelease")
-    draft: bool = Field(default=False, description="Whether draft")
-    target_commitish: str | None = Field(
-        default=None, description="Target branch/commit"
-    )
-
-
-class WatchEvent(GitHubEventBase):
-    """
-    WatchEvent from GH Archive - repository starred.
-
-    WHEN: created_at timestamp
-    WHO: actor.login (who starred)
-    WHAT: Starred {repository}
-
-    Can indicate reconnaissance activity when correlated with other events.
-    """
-
-    evidence_type: Literal["watch_event"] = "watch_event"
-    action: Literal["started"] = Field(default="started", description="Always 'started'")
-
-
-class MemberEvent(GitHubEventBase):
-    """
-    MemberEvent from GH Archive - collaborator added/removed.
-
-    WHEN: created_at timestamp
-    WHO: actor.login (who made the change)
-    WHAT: {action} member {member.login} with {permission}
-    """
-
-    evidence_type: Literal["member_event"] = "member_event"
-
-    # WHAT happened
-    action: Literal["added", "removed", "edited"] = Field(
-        ..., description="Member action"
-    )
-    member: GitHubActor = Field(..., description="Affected member")
-    permission: str | None = Field(
-        default=None, description="Permission level granted"
-    )
-
-
-class PublicEvent(GitHubEventBase):
-    """
-    PublicEvent from GH Archive - repository made public.
-
-    WHEN: created_at timestamp
-    WHO: actor.login (who made it public)
-    WHAT: Made {repository} public
-    """
-
-    evidence_type: Literal["public_event"] = "public_event"
-
-
-# =============================================================================
-# GITHUB API OBSERVATIONS - Point-in-time queries
-#
-# These are OBSERVATIONS - we queried the API and saw this state.
-# Not events, but current/historical state retrieved on demand.
-# =============================================================================
-
-
-class CommitAuthor(BaseModel):
-    """Git commit author/committer information."""
-
-    name: str = Field(..., description="Name from git commit")
-    email: str = Field(..., description="Email from git commit")
-    date: datetime = Field(..., description="Author/commit date (UTC)")
-
-
-class CommitSignature(BaseModel):
-    """GPG/SSH signature verification details."""
-
-    verified: bool = Field(..., description="Whether signature is valid")
-    reason: str | None = Field(
-        default=None, description="Verification reason/status"
-    )
-    signature: str | None = Field(default=None, description="Raw signature")
-    payload: str | None = Field(default=None, description="Signed payload")
-
-
-class CommitFileChange(BaseModel):
-    """File changed in a commit."""
-
-    filename: str = Field(..., description="Path to file")
-    status: Literal["added", "modified", "removed", "renamed", "copied"] = Field(
-        ..., description="Change type"
-    )
-    additions: int = Field(default=0, description="Lines added")
-    deletions: int = Field(default=0, description="Lines deleted")
-    patch: str | None = Field(
-        default=None, description="Unified diff patch for this file"
-    )
-    previous_filename: str | None = Field(
-        default=None, description="Previous filename if renamed"
-    )
-
-
-class CommitObservation(EvidenceBase):
-    """
-    Observation of a commit via GitHub API, web, or git.
-
-    NOT an event - commits are delivered via PushEvent in GH Archive.
-    This is for when you query a specific commit directly.
-
-    WHEN: when the commit was authored (author.date)
-    WHO: author (wrote code) and committer (created commit object)
-    WHAT: Commit {sha} with message "{message}"
-
-    Verifiable via:
-    - GitHub API: GET /repos/{owner}/{repo}/commits/{sha}
-    - GitHub Web: https://github.com/{owner}/{repo}/commit/{sha}
-    - GitHub Patch: https://github.com/{owner}/{repo}/commit/{sha}.patch
-    - Git: git show {sha}
-    """
-
-    evidence_type: Literal["commit_observation"] = "commit_observation"
-
-    # WHERE
-    repository: GitHubRepository = Field(..., description="Repository containing commit")
-
-    # WHAT - the commit itself
-    sha: Annotated[str, Field(min_length=40, max_length=40)] = Field(
-        ..., description="Full 40-character commit SHA"
-    )
-    short_sha: Annotated[str, Field(min_length=7, max_length=8)] = Field(
-        ..., description="Short SHA (7-8 chars)"
-    )
-    message: str = Field(..., description="Full commit message")
+    # WHEN
+    when: datetime = Field(..., description="When this happened (UTC)")
 
     # WHO
-    author: CommitAuthor = Field(..., description="Who wrote the code")
-    committer: CommitAuthor = Field(..., description="Who created the commit object")
-
-    # Additional details
-    signature: CommitSignature | None = Field(
-        default=None, description="Signature verification if signed"
-    )
-    parents: list[str] = Field(
-        default_factory=list, description="Parent commit SHAs"
-    )
-    files: list[CommitFileChange] = Field(
-        default_factory=list, description="Files changed in this commit"
-    )
-    is_merge: bool = Field(
-        default=False, description="Whether this is a merge commit"
-    )
-
-    # Recovery context
-    is_dangling: bool = Field(
-        default=False,
-        description="Commit is not on any branch (orphaned/force-pushed)",
-    )
-    recovered_via: Literal["api", "web", "patch", "git_fetch"] | None = Field(
-        default=None, description="How this orphaned commit was accessed"
-    )
-
-
-class ForcesPushedCommitReference(EvidenceBase):
-    """
-    Reference to a commit that was force-pushed over.
-
-    Derived from PushEvent with size=0 in GH Archive.
-    The before_sha points to a commit that's no longer on any branch
-    but remains accessible on GitHub.
-
-    WHEN: when the force push occurred
-    WHO: pusher (actor from PushEvent)
-    WHAT: Force push replaced {deleted_sha} with {replaced_by_sha} on {branch}
-    """
-
-    evidence_type: Literal["force_pushed_commit_ref"] = "force_pushed_commit_ref"
-
-    # WHERE
-    repository: GitHubRepository = Field(..., description="Repository")
-
-    # WHO
-    pusher: GitHubActor = Field(..., description="Who performed the force push")
+    who: GitHubActor = Field(..., description="Who performed the action")
 
     # WHAT
-    branch: str = Field(..., description="Branch that was force-pushed")
-    deleted_sha: Annotated[str, Field(min_length=40, max_length=40)] = Field(
-        ..., description="SHA of the overwritten commit (from PushEvent.before)"
-    )
-    replaced_by_sha: Annotated[str, Field(min_length=40, max_length=40)] = Field(
-        ..., description="SHA that replaced it (from PushEvent.after)"
-    )
-
-    # Recovery status
-    source_push_event_id: str | None = Field(
-        default=None, description="ID of the PushEvent this was derived from"
-    )
-    commit_recovered: bool = Field(
-        default=False, description="Whether full commit was fetched via API"
-    )
-    recovered_commit: CommitObservation | None = Field(
-        default=None, description="Full commit details if recovered"
-    )
-
-
-# =============================================================================
-# WAYBACK MACHINE SNAPSHOTS - Point-in-time archived web pages
-#
-# These are SNAPSHOTS - the Wayback Machine crawled a URL at time T
-# and captured what it saw. Not events, but frozen observations.
-# =============================================================================
-
-
-class WaybackSnapshot(BaseModel):
-    """
-    A single Wayback Machine snapshot - a frozen observation of a URL.
-
-    WHEN: timestamp (archive capture time, not content time)
-    WHAT: The URL content as it appeared at capture time
-    """
-
-    timestamp: str = Field(
-        ..., description="Archive timestamp (YYYYMMDDHHMMSS)"
-    )
-    captured_at: datetime = Field(
-        ..., description="When Wayback Machine captured this (parsed from timestamp)"
-    )
-    original_url: HttpUrl = Field(..., description="Original URL that was archived")
-    archive_url: HttpUrl = Field(
-        ..., description="Full archive.org URL to access snapshot"
-    )
-    status_code: int = Field(..., description="HTTP status code at capture time")
-    mime_type: str | None = Field(default=None, description="Content MIME type")
-    digest: str | None = Field(default=None, description="Content digest/hash")
-
-
-class WaybackObservation(EvidenceBase):
-    """
-    Collection of Wayback snapshots for a GitHub URL.
-
-    WHEN: range of capture times (earliest to latest)
-    WHAT: Archived snapshots of {content_type} at {original_url}
-
-    Verifiable via CDX API:
-    https://web.archive.org/cdx/search/cdx?url={url}&output=json
-    """
-
-    evidence_type: Literal["wayback_observation"] = "wayback_observation"
-
-    # WHERE (if applicable)
-    repository: GitHubRepository | None = Field(
-        default=None, description="Associated repository if applicable"
-    )
-
-    # WHAT was observed
-    content_type: Literal[
-        "repository_homepage",
-        "issue",
-        "pull_request",
-        "wiki",
-        "file_blob",
-        "directory_tree",
-        "commits_list",
-        "release",
-        "network_members",
-        "user_profile",
-        "other",
-    ] = Field(..., description="Type of GitHub content archived")
-
-    original_url: HttpUrl = Field(..., description="The URL being tracked")
-
-    # Snapshot data
-    snapshots: list[WaybackSnapshot] = Field(
-        ..., description="All available snapshots"
-    )
-    latest_snapshot: WaybackSnapshot = Field(
-        ..., description="Most recent snapshot"
-    )
-    earliest_snapshot: WaybackSnapshot = Field(
-        ..., description="Earliest snapshot"
-    )
-    total_snapshots: int = Field(..., description="Total snapshot count")
-
-
-class RecoveredIssueContent(EvidenceBase):
-    """
-    Issue/PR content recovered from Wayback snapshot.
-
-    WHEN: snapshot capture time
-    WHO: author_login (from parsed page)
-    WHAT: Recovered content of issue/PR #{number}
-
-    Use when content no longer exists on GitHub or GH Archive.
-    """
-
-    evidence_type: Literal["recovered_issue_content"] = "recovered_issue_content"
+    what: str = Field(..., description="What happened (brief description)")
 
     # WHERE
-    repository: GitHubRepository = Field(..., description="Repository")
+    repository: GitHubRepository = Field(..., description="Target repository")
 
-    # WHAT was recovered
-    issue_number: int = Field(..., description="Issue/PR number")
-    is_pull_request: bool = Field(default=False, description="PR vs issue")
-    title: str | None = Field(default=None, description="Recovered title")
-    body: str | None = Field(default=None, description="Recovered body text")
+    # Verification
+    verification: VerificationInfo = Field(..., description="How to verify")
 
-    # WHO (from parsed content)
-    author_login: str | None = Field(default=None, description="Author username")
-
-    # Additional recovered data
-    comments: list[str] = Field(
-        default_factory=list, description="Recovered comment texts"
-    )
-    labels: list[str] = Field(default_factory=list, description="Labels")
-    state: Literal["open", "closed", "merged", "unknown"] | None = Field(
-        default=None, description="State at snapshot time"
-    )
-
-    # Source
-    source_snapshot: WaybackSnapshot = Field(
-        ..., description="Wayback snapshot this was extracted from"
-    )
+    notes: str | None = Field(default=None, description="Investigator notes")
 
 
-class RecoveredFileContent(EvidenceBase):
+# -----------------------------------------------------------------------------
+# GH Archive Events
+# -----------------------------------------------------------------------------
+
+
+class CommitInPush(BaseModel):
+    """Commit embedded in a PushEvent."""
+
+    sha: str = Field(..., description="Commit SHA")
+    message: str = Field(..., description="Commit message")
+    author_name: str = Field(..., description="Author name")
+    author_email: str = Field(..., description="Author email")
+
+
+class PushEvent(Event):
     """
-    File content recovered from Wayback snapshot.
+    PushEvent - someone pushed commits.
 
-    WHEN: snapshot capture time
-    WHAT: Content of {file_path} as of snapshot time
-
-    Use when repository is deleted but files were archived.
+    WHEN: Push timestamp
+    WHO: Pusher
+    WHAT: Pushed N commits to {ref}
     """
 
-    evidence_type: Literal["recovered_file_content"] = "recovered_file_content"
+    event_type: Literal["push"] = "push"
 
-    # WHERE
-    repository: GitHubRepository = Field(..., description="Repository")
-
-    # WHAT was recovered
-    file_path: str = Field(..., description="Path to file in repository")
-    branch: str | None = Field(default=None, description="Branch name if known")
-    content: str = Field(..., description="Recovered file content")
-    content_hash: str | None = Field(
-        default=None, description="SHA256 hash of recovered content"
-    )
-
-    # Source
-    source_snapshot: WaybackSnapshot = Field(
-        ..., description="Wayback snapshot this was extracted from"
-    )
+    ref: str = Field(..., description="Git ref (e.g., refs/heads/main)")
+    before_sha: str = Field(..., description="SHA before push")
+    after_sha: str = Field(..., description="SHA after push")
+    size: int = Field(..., description="Number of commits (0 = force push)")
+    commits: list[CommitInPush] = Field(default_factory=list)
+    is_force_push: bool = Field(default=False, description="True if size=0")
 
 
-class RecoveredWikiContent(EvidenceBase):
+class PullRequestEvent(Event):
+    """PullRequestEvent - PR action occurred."""
+
+    event_type: Literal["pull_request"] = "pull_request"
+
+    action: PRAction = Field(..., description="PR action")
+    pr_number: int = Field(..., description="PR number")
+    pr_title: str = Field(..., description="PR title")
+    pr_body: str | None = Field(default=None)
+    head_sha: str | None = Field(default=None)
+    base_ref: str | None = Field(default=None)
+    merged: bool = Field(default=False)
+    merge_commit_sha: str | None = Field(default=None)
+
+
+class IssueEvent(Event):
+    """IssuesEvent - issue action occurred."""
+
+    event_type: Literal["issue"] = "issue"
+
+    action: IssueAction = Field(..., description="Issue action")
+    issue_number: int = Field(..., description="Issue number")
+    issue_title: str = Field(..., description="Issue title")
+    issue_body: str | None = Field(default=None)
+    labels: list[str] = Field(default_factory=list)
+
+
+class IssueCommentEvent(Event):
+    """IssueCommentEvent - comment on issue/PR."""
+
+    event_type: Literal["issue_comment"] = "issue_comment"
+
+    action: Literal["created", "edited", "deleted"] = Field(...)
+    issue_number: int = Field(..., description="Parent issue/PR number")
+    comment_id: int = Field(..., description="Comment ID")
+    comment_body: str = Field(..., description="Comment text")
+
+
+class CreateEvent(Event):
+    """CreateEvent - branch/tag/repo created."""
+
+    event_type: Literal["create"] = "create"
+
+    ref_type: RefType = Field(..., description="What was created")
+    ref_name: str = Field(..., description="Name of branch/tag")
+
+
+class DeleteEvent(Event):
+    """DeleteEvent - branch/tag deleted."""
+
+    event_type: Literal["delete"] = "delete"
+
+    ref_type: RefType = Field(..., description="What was deleted")
+    ref_name: str = Field(..., description="Name of branch/tag")
+
+
+class ForkEvent(Event):
+    """ForkEvent - repository forked."""
+
+    event_type: Literal["fork"] = "fork"
+
+    fork_full_name: str = Field(..., description="New fork (owner/repo)")
+
+
+class WorkflowRunEvent(Event):
     """
-    Wiki page content recovered from Wayback snapshot.
+    WorkflowRunEvent - GitHub Actions execution.
 
-    WHEN: snapshot capture time
-    WHAT: Content of wiki page "{page_name}"
+    CRITICAL: Absence of this during suspicious commit = direct API attack.
     """
 
-    evidence_type: Literal["recovered_wiki_content"] = "recovered_wiki_content"
+    event_type: Literal["workflow_run"] = "workflow_run"
 
-    # WHERE
-    repository: GitHubRepository = Field(..., description="Repository")
-
-    # WHAT was recovered
-    page_name: str = Field(..., description="Wiki page name")
-    content: str = Field(..., description="Recovered wiki content")
-
-    # Source
-    source_snapshot: WaybackSnapshot = Field(
-        ..., description="Wayback snapshot this was extracted from"
-    )
+    action: Literal["requested", "completed", "in_progress"] = Field(...)
+    workflow_name: str = Field(..., description="Workflow name")
+    workflow_path: str | None = Field(default=None)
+    head_sha: str = Field(..., description="Commit being processed")
+    head_branch: str | None = Field(default=None)
+    conclusion: WorkflowConclusion | None = Field(default=None)
+    run_id: int | None = Field(default=None)
 
 
-class RecoveredForkList(EvidenceBase):
-    """
-    Fork list recovered from archived network/members page.
+class ReleaseEvent(Event):
+    """ReleaseEvent - release published."""
 
-    WHEN: snapshot capture time
-    WHAT: List of forks as of snapshot time
+    event_type: Literal["release"] = "release"
 
-    Useful for finding surviving forks of deleted repositories.
-    """
-
-    evidence_type: Literal["recovered_fork_list"] = "recovered_fork_list"
-
-    # WHERE
-    repository: GitHubRepository = Field(
-        ..., description="Parent repository (possibly deleted)"
-    )
-
-    # WHAT was recovered
-    forks: list[str] = Field(..., description="Fork full names (owner/repo)")
-    forks_verified_existing: list[str] = Field(
-        default_factory=list,
-        description="Forks confirmed to still exist on GitHub",
-    )
-
-    # Source
-    source_snapshot: WaybackSnapshot = Field(
-        ..., description="Wayback snapshot this was extracted from"
-    )
+    action: Literal["published", "created", "edited", "deleted"] = Field(...)
+    tag_name: str = Field(..., description="Release tag")
+    release_name: str | None = Field(default=None)
+    release_body: str | None = Field(default=None)
+    prerelease: bool = Field(default=False)
 
 
-# =============================================================================
-# TIMELINE & INVESTIGATION CONTAINERS
-# =============================================================================
+class WatchEvent(Event):
+    """WatchEvent - repo starred (recon indicator)."""
+
+    event_type: Literal["watch"] = "watch"
 
 
-# Type alias for GH Archive events
-GitHubArchiveEvent = (
+class MemberEvent(Event):
+    """MemberEvent - collaborator added/removed."""
+
+    event_type: Literal["member"] = "member"
+
+    action: Literal["added", "removed"] = Field(...)
+    member: GitHubActor = Field(..., description="Affected member")
+    permission: str | None = Field(default=None)
+
+
+class PublicEvent(Event):
+    """PublicEvent - repo made public."""
+
+    event_type: Literal["public"] = "public"
+
+
+# Type alias for all events
+AnyEvent = (
     PushEvent
     | PullRequestEvent
     | IssueEvent
@@ -888,150 +355,327 @@ GitHubArchiveEvent = (
     | PublicEvent
 )
 
-# Type alias for observations (point-in-time queries)
-Observation = (
-    CommitObservation
-    | ForcesPushedCommitReference
-    | WaybackObservation
-    | RecoveredIssueContent
-    | RecoveredFileContent
-    | RecoveredWikiContent
-    | RecoveredForkList
+
+# =============================================================================
+# CONTENT - Something we found/recovered
+#
+# Has: when_found, who (optional), what, where_found, found_by
+# Sources: GH Archive, GitHub API, Wayback
+# =============================================================================
+
+
+class Content(BaseModel):
+    """
+    Base class for content - something we found/recovered.
+
+    WHEN_FOUND: When we discovered this content
+    WHO: Who created it (if known)
+    WHAT: What the content is
+    WHERE_FOUND: Source location
+    FOUND_BY: How we found it
+    """
+
+    evidence_id: str = Field(..., description="Unique evidence ID")
+
+    # WHEN
+    when_found: datetime = Field(..., description="When we found this (UTC)")
+    content_timestamp: datetime | None = Field(
+        default=None, description="When content was created (if known)"
+    )
+
+    # WHO (optional - not always known)
+    who: GitHubActor | None = Field(default=None, description="Content creator")
+
+    # WHAT
+    what: str = Field(..., description="What this content is")
+
+    # WHERE
+    where_found: str = Field(..., description="Source location (URL, path, etc.)")
+    repository: GitHubRepository | None = Field(default=None)
+
+    # FOUND BY
+    found_by: EvidenceSource = Field(..., description="How we found this")
+
+    # Verification
+    verification: VerificationInfo = Field(..., description="How to verify")
+
+    notes: str | None = Field(default=None)
+
+
+# -----------------------------------------------------------------------------
+# Commit Content (from API/web/git)
+# -----------------------------------------------------------------------------
+
+
+class CommitAuthor(BaseModel):
+    """Git commit author/committer."""
+
+    name: str
+    email: str
+    date: datetime
+
+
+class CommitFileChange(BaseModel):
+    """File changed in a commit."""
+
+    filename: str
+    status: Literal["added", "modified", "removed", "renamed"]
+    additions: int = 0
+    deletions: int = 0
+    patch: str | None = None
+
+
+class CommitContent(Content):
+    """
+    Full commit details recovered from API/web/git.
+
+    Not an event - use PushEvent for when commits were pushed.
+    """
+
+    content_type: Literal["commit"] = "commit"
+
+    sha: Annotated[str, Field(min_length=40, max_length=40)] = Field(
+        ..., description="Full 40-char SHA"
+    )
+    message: str = Field(..., description="Commit message")
+    author: CommitAuthor = Field(..., description="Who wrote the code")
+    committer: CommitAuthor = Field(..., description="Who created commit object")
+    parents: list[str] = Field(default_factory=list)
+    files: list[CommitFileChange] = Field(default_factory=list)
+    signature_verified: bool | None = Field(default=None)
+
+    # Recovery context
+    is_dangling: bool = Field(
+        default=False, description="Not on any branch (force-pushed over)"
+    )
+
+
+class ForcePushedCommitRef(Content):
+    """
+    Reference to a commit that was force-pushed over.
+
+    Derived from PushEvent with size=0. The before_sha points to
+    a commit no longer on any branch but still accessible.
+    """
+
+    content_type: Literal["force_pushed_commit"] = "force_pushed_commit"
+
+    deleted_sha: str = Field(..., description="SHA that was overwritten")
+    replaced_by_sha: str = Field(..., description="SHA that replaced it")
+    branch: str = Field(..., description="Branch that was force-pushed")
+    pusher: GitHubActor = Field(..., description="Who force-pushed")
+    push_event_id: str | None = Field(default=None, description="Source PushEvent ID")
+
+    # Recovery
+    commit_recovered: bool = Field(default=False)
+    recovered_commit: CommitContent | None = Field(default=None)
+
+
+# -----------------------------------------------------------------------------
+# Wayback Content (from archive.org snapshots)
+# -----------------------------------------------------------------------------
+
+
+class WaybackSnapshot(BaseModel):
+    """Single Wayback Machine snapshot."""
+
+    timestamp: str = Field(..., description="YYYYMMDDHHMMSS")
+    captured_at: datetime = Field(..., description="Capture time")
+    archive_url: HttpUrl = Field(..., description="archive.org URL")
+    original_url: HttpUrl = Field(..., description="Original URL")
+    status_code: int = Field(default=200)
+    digest: str | None = Field(default=None, description="Content hash")
+
+
+class WaybackContent(Content):
+    """Collection of Wayback snapshots for a URL."""
+
+    content_type: Literal["wayback_snapshots"] = "wayback_snapshots"
+
+    original_url: HttpUrl = Field(..., description="URL being tracked")
+    snapshots: list[WaybackSnapshot] = Field(...)
+    total_snapshots: int = Field(...)
+    earliest: WaybackSnapshot = Field(...)
+    latest: WaybackSnapshot = Field(...)
+
+
+class RecoveredIssue(Content):
+    """Issue/PR content recovered from Wayback or GH Archive."""
+
+    content_type: Literal["recovered_issue"] = "recovered_issue"
+
+    issue_number: int
+    is_pull_request: bool = False
+    title: str | None = None
+    body: str | None = None
+    state: Literal["open", "closed", "merged", "unknown"] | None = None
+    labels: list[str] = Field(default_factory=list)
+    comments: list[str] = Field(default_factory=list)
+
+    source_snapshot: WaybackSnapshot | None = Field(
+        default=None, description="Wayback source if from archive"
+    )
+
+
+class RecoveredFile(Content):
+    """File content recovered from Wayback."""
+
+    content_type: Literal["recovered_file"] = "recovered_file"
+
+    file_path: str
+    branch: str | None = None
+    content: str
+    content_hash: str | None = None
+
+    source_snapshot: WaybackSnapshot
+
+
+class RecoveredWiki(Content):
+    """Wiki page recovered from Wayback."""
+
+    content_type: Literal["recovered_wiki"] = "recovered_wiki"
+
+    page_name: str
+    content: str
+
+    source_snapshot: WaybackSnapshot
+
+
+class RecoveredForks(Content):
+    """Fork list recovered from Wayback network page."""
+
+    content_type: Literal["recovered_forks"] = "recovered_forks"
+
+    forks: list[str] = Field(..., description="Fork full names")
+    forks_still_exist: list[str] = Field(default_factory=list)
+
+    source_snapshot: WaybackSnapshot
+
+
+# Type alias for all content
+AnyContent = (
+    CommitContent
+    | ForcePushedCommitRef
+    | WaybackContent
+    | RecoveredIssue
+    | RecoveredFile
+    | RecoveredWiki
+    | RecoveredForks
 )
 
-# All evidence types
-AnyEvidence = GitHubArchiveEvent | Observation
 
-
-class TimelineEntry(BaseModel):
-    """
-    A single entry in an investigation timeline.
-
-    Links evidence to chronological sequence with analysis.
-    """
-
-    timestamp: datetime = Field(..., description="When this occurred (UTC)")
-    evidence: AnyEvidence = Field(..., description="The evidence")
-
-    # Categorization
-    significance: Literal["critical", "high", "medium", "low", "info"] = Field(
-        default="info", description="Importance to investigation"
-    )
-    tags: list[str] = Field(
-        default_factory=list,
-        description="Tags (e.g., 'initial_access', 'persistence', 'exfil')",
-    )
-
-    # Analysis
-    analysis_notes: str | None = Field(
-        default=None, description="Investigator analysis"
-    )
-    related_evidence_ids: list[str] = Field(
-        default_factory=list, description="IDs of related evidence"
-    )
-
-
-class ActorProfile(BaseModel):
-    """
-    Profile of an actor involved in an investigation.
-
-    Aggregates all evidence for a specific GitHub account.
-    """
-
-    actor: GitHubActor = Field(..., description="The GitHub actor")
-
-    # WHEN active
-    first_seen: datetime = Field(..., description="Earliest activity (UTC)")
-    last_seen: datetime = Field(..., description="Most recent activity (UTC)")
-
-    # WHAT they did
-    repositories_touched: list[str] = Field(
-        default_factory=list, description="Repositories interacted with"
-    )
-    event_count: int = Field(default=0, description="Total events")
-    event_types: list[EventType] = Field(
-        default_factory=list, description="Types of events performed"
-    )
-
-    # Account metadata
-    is_automation: bool = Field(
-        default=False, description="Appears to be automation account"
-    )
-    account_created: datetime | None = Field(
-        default=None, description="Account creation date if known"
-    )
-    account_deleted: bool = Field(
-        default=False, description="Account is now deleted"
-    )
-
-    # Links to evidence
-    evidence_ids: list[str] = Field(
-        default_factory=list, description="Evidence IDs involving this actor"
-    )
-    notes: str | None = Field(default=None, description="Investigator notes")
+# =============================================================================
+# IOC - Indicator of Compromise
+#
+# Same structure as Content
+# Sources: Security blogs, extracted from content
+# =============================================================================
 
 
 class IOC(BaseModel):
     """
-    Indicator of Compromise from evidence.
+    Indicator of Compromise.
 
-    Only IOCs that are verifiable from collected evidence.
+    Same structure as Content - something we found that indicates compromise.
+    Sources: Security blogs, extracted from events/content.
     """
 
-    ioc_type: Literal[
-        "commit_sha",
-        "file_path",
-        "email",
-        "username",
-        "ip_address",
-        "domain",
-        "api_key_pattern",
-        "secret_pattern",
-        "repository",
-        "tag_name",
-        "branch_name",
-        "workflow_name",
-        "other",
-    ] = Field(..., description="Type of IOC")
+    evidence_id: str = Field(..., description="Unique evidence ID")
+
+    # WHEN
+    when_found: datetime = Field(..., description="When we found this")
+    first_seen: datetime | None = Field(default=None, description="First observation")
+    last_seen: datetime | None = Field(default=None, description="Last observation")
+
+    # WHO (optional)
+    who: GitHubActor | None = Field(default=None, description="Associated actor")
+
+    # WHAT
+    ioc_type: IOCType = Field(..., description="Type of IOC")
     value: str = Field(..., description="The IOC value")
-    context: str = Field(..., description="Where this IOC was found")
-    evidence_id: str = Field(..., description="Source evidence ID")
-    confidence: Literal["confirmed", "high", "medium", "low"] = Field(
-        default="medium", description="Confidence level"
+    what: str = Field(..., description="Context/description")
+
+    # WHERE
+    where_found: str = Field(..., description="Source (URL, evidence ID, etc.)")
+    repository: GitHubRepository | None = Field(default=None)
+
+    # FOUND BY
+    found_by: EvidenceSource = Field(..., description="How we found this")
+    extracted_from: str | None = Field(
+        default=None, description="Evidence ID this was extracted from"
     )
-    first_seen: datetime | None = Field(default=None, description="First seen")
-    last_seen: datetime | None = Field(default=None, description="Last seen")
+
+    # Confidence
+    confidence: Literal["confirmed", "high", "medium", "low"] = Field(default="medium")
+
+    # Verification
+    verification: VerificationInfo | None = Field(default=None)
+
+    notes: str | None = Field(default=None)
+
+
+# =============================================================================
+# INVESTIGATION CONTAINERS
+# =============================================================================
+
+
+# All evidence types
+AnyEvidence = AnyEvent | AnyContent | IOC
+
+
+class TimelineEntry(BaseModel):
+    """Single entry in investigation timeline."""
+
+    timestamp: datetime = Field(..., description="When this occurred")
+    evidence: AnyEvidence = Field(..., description="The evidence")
+    significance: Literal["critical", "high", "medium", "low", "info"] = "info"
+    tags: list[str] = Field(default_factory=list)
+    analysis: str | None = Field(default=None)
+    related_ids: list[str] = Field(default_factory=list)
+
+
+class ActorProfile(BaseModel):
+    """Profile of an actor in investigation."""
+
+    actor: GitHubActor
+    first_seen: datetime
+    last_seen: datetime
+    repositories: list[str] = Field(default_factory=list)
+    event_count: int = 0
+    event_types: list[EventType] = Field(default_factory=list)
+    is_automation: bool = False
+    account_deleted: bool = False
+    evidence_ids: list[str] = Field(default_factory=list)
+    notes: str | None = None
 
 
 class Investigation(BaseModel):
-    """
-    Complete GitHub forensics investigation container.
-    """
+    """Complete investigation container."""
 
-    investigation_id: str = Field(..., description="Unique ID")
-    title: str = Field(..., description="Investigation title")
-    description: str = Field(..., description="Summary")
-    created_at: datetime = Field(..., description="Start time")
-    updated_at: datetime = Field(..., description="Last update")
-    status: Literal["active", "completed", "archived"] = Field(default="active")
+    investigation_id: str
+    title: str
+    description: str
+    created_at: datetime
+    updated_at: datetime
+    status: Literal["active", "completed", "archived"] = "active"
 
     # Scope
     target_repositories: list[GitHubRepository] = Field(default_factory=list)
     target_actors: list[str] = Field(default_factory=list)
-    time_range_start: datetime | None = Field(default=None)
-    time_range_end: datetime | None = Field(default=None)
+    time_start: datetime | None = None
+    time_end: datetime | None = None
 
     # Evidence
-    evidence: list[AnyEvidence] = Field(default_factory=list)
-    timeline: list[TimelineEntry] = Field(default_factory=list)
-    actors: list[ActorProfile] = Field(default_factory=list)
+    events: list[AnyEvent] = Field(default_factory=list)
+    content: list[AnyContent] = Field(default_factory=list)
     iocs: list[IOC] = Field(default_factory=list)
 
     # Analysis
-    findings: str | None = Field(default=None)
+    timeline: list[TimelineEntry] = Field(default_factory=list)
+    actors: list[ActorProfile] = Field(default_factory=list)
+    findings: str | None = None
     recommendations: list[str] = Field(default_factory=list)
 
     # Verification metadata
-    bigquery_queries_used: list[str] = Field(default_factory=list)
-    wayback_urls_checked: list[str] = Field(default_factory=list)
-    github_api_calls: int = Field(default=0)
+    queries_used: list[str] = Field(default_factory=list)
+    urls_checked: list[str] = Field(default_factory=list)

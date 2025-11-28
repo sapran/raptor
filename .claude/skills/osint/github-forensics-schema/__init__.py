@@ -1,14 +1,13 @@
 """
 GitHub Forensics Verifiable Evidence Schema
 
-Pydantic models for verifiable GitHub forensic evidence.
-All evidence types can be independently verified through:
-- GitHub API (point-in-time observations)
-- GH Archive/BigQuery (immutable event stream)
-- Wayback Machine (point-in-time snapshots)
-- Git (local repository queries)
-
-Every evidence piece answers: WHEN, WHO, WHAT
+Three evidence types:
+1. Event   - Something happened (when, who, what)
+             Sources: GH Archive, git log
+2. Content - Something we found (when_found, who?, what, where_found, found_by)
+             Sources: GH Archive, GitHub API, Wayback
+3. IOC     - Indicator of Compromise (same as content)
+             Sources: Security blogs, extracted from content
 """
 
 from .schema import (
@@ -19,14 +18,14 @@ from .schema import (
     PRAction,
     IssueAction,
     WorkflowConclusion,
-    # Base types
-    VerificationInfo,
+    IOCType,
+    # Common
     GitHubActor,
     GitHubRepository,
-    EvidenceBase,
-    GitHubEventBase,
-    # GH Archive Events (commits come via PushEvent)
-    PushEventCommit,
+    VerificationInfo,
+    # Events (when, who, what)
+    Event,
+    CommitInPush,
     PushEvent,
     PullRequestEvent,
     IssueEvent,
@@ -39,28 +38,27 @@ from .schema import (
     WatchEvent,
     MemberEvent,
     PublicEvent,
-    # API Observations (point-in-time queries)
+    AnyEvent,
+    # Content (when_found, who?, what, where_found, found_by)
+    Content,
     CommitAuthor,
-    CommitSignature,
     CommitFileChange,
-    CommitObservation,
-    ForcesPushedCommitReference,
-    # Wayback Snapshots (point-in-time archived pages)
+    CommitContent,
+    ForcePushedCommitRef,
     WaybackSnapshot,
-    WaybackObservation,
-    RecoveredIssueContent,
-    RecoveredFileContent,
-    RecoveredWikiContent,
-    RecoveredForkList,
-    # Investigation containers
+    WaybackContent,
+    RecoveredIssue,
+    RecoveredFile,
+    RecoveredWiki,
+    RecoveredForks,
+    AnyContent,
+    # IOC
+    IOC,
+    # Investigation
+    AnyEvidence,
     TimelineEntry,
     ActorProfile,
-    IOC,
     Investigation,
-    # Type aliases
-    GitHubArchiveEvent,
-    Observation,
-    AnyEvidence,
 )
 
 __all__ = [
@@ -71,14 +69,14 @@ __all__ = [
     "PRAction",
     "IssueAction",
     "WorkflowConclusion",
-    # Base types
-    "VerificationInfo",
+    "IOCType",
+    # Common
     "GitHubActor",
     "GitHubRepository",
-    "EvidenceBase",
-    "GitHubEventBase",
-    # GH Archive Events
-    "PushEventCommit",
+    "VerificationInfo",
+    # Events
+    "Event",
+    "CommitInPush",
     "PushEvent",
     "PullRequestEvent",
     "IssueEvent",
@@ -91,26 +89,25 @@ __all__ = [
     "WatchEvent",
     "MemberEvent",
     "PublicEvent",
-    # API Observations
+    "AnyEvent",
+    # Content
+    "Content",
     "CommitAuthor",
-    "CommitSignature",
     "CommitFileChange",
-    "CommitObservation",
-    "ForcesPushedCommitReference",
-    # Wayback Snapshots
+    "CommitContent",
+    "ForcePushedCommitRef",
     "WaybackSnapshot",
-    "WaybackObservation",
-    "RecoveredIssueContent",
-    "RecoveredFileContent",
-    "RecoveredWikiContent",
-    "RecoveredForkList",
-    # Investigation containers
+    "WaybackContent",
+    "RecoveredIssue",
+    "RecoveredFile",
+    "RecoveredWiki",
+    "RecoveredForks",
+    "AnyContent",
+    # IOC
+    "IOC",
+    # Investigation
+    "AnyEvidence",
     "TimelineEntry",
     "ActorProfile",
-    "IOC",
     "Investigation",
-    # Type aliases
-    "GitHubArchiveEvent",
-    "Observation",
-    "AnyEvidence",
 ]

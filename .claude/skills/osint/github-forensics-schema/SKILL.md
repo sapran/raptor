@@ -1,7 +1,7 @@
 ---
 name: github-forensics-schema
-description: Pydantic schema for verifiable GitHub forensic evidence. Defines strict types for all evidence that can be independently verified via GitHub API, GH Archive (BigQuery), Git, or Wayback Machine. Every evidence piece answers WHEN, WHO, WHAT.
-version: 1.1
+description: Pydantic schema for verifiable GitHub forensic evidence. Three types - Event (when/who/what), Content (when_found/who?/what/where_found/found_by), IOC (same as content). All independently verifiable.
+version: 2.0
 author: mbrg
 tags:
   - github
@@ -14,221 +14,188 @@ tags:
 
 # GitHub Forensics Verifiable Evidence Schema
 
-**Purpose**: Strict Pydantic schema defining all verifiable GitHub forensic evidence. Every evidence piece answers **WHEN**, **WHO**, **WHAT** and can be independently verified.
+Three evidence types, each independently verifiable:
 
-## When to Use This Skill
+| Type | Fields | Sources |
+|------|--------|---------|
+| **Event** | when, who, what | GH Archive, git log |
+| **Content** | when_found, who?, what, where_found, found_by | GH Archive, GitHub API, Wayback |
+| **IOC** | same as content | Security blogs, extracted from content |
 
-- Building GitHub security investigations with structured evidence
-- Collecting IOCs from GitHub-related incidents
-- Creating reproducible forensic reports with verifiable claims
-- Integrating multiple evidence sources (GH Archive, Wayback, GitHub API)
-- Establishing attribution and timeline with provable data
+## Event - Something Happened
 
-## Core Principles
-
-**All Evidence Answers WHEN, WHO, WHAT**:
 ```python
-class EvidenceBase(BaseModel):
-    when: datetime      # Temporal anchor
-    what: str           # What this evidence shows
-    verification: ...   # How to verify it
+class Event(BaseModel):
+    when: datetime          # When it happened
+    who: GitHubActor        # Who did it
+    what: str               # What they did
+    repository: GitHubRepository
+    verification: VerificationInfo
 ```
 
-**Evidence Categories**:
+### Event Types (from GH Archive / git log)
 
-| Category | Source | Nature | Example |
-|----------|--------|--------|---------|
-| **GH Archive Events** | BigQuery | Immutable event stream | PushEvent, IssueEvent |
-| **API Observations** | GitHub API | Point-in-time query | CommitObservation |
-| **Wayback Snapshots** | archive.org | Point-in-time capture | WaybackObservation |
+| Type | What |
+|------|------|
+| `PushEvent` | Pushed commits (commits embedded here, not separate events) |
+| `PullRequestEvent` | PR opened/closed/merged |
+| `IssueEvent` | Issue opened/closed |
+| `IssueCommentEvent` | Comment on issue/PR |
+| `CreateEvent` | Branch/tag/repo created |
+| `DeleteEvent` | Branch/tag deleted |
+| `ForkEvent` | Repo forked |
+| `WorkflowRunEvent` | GitHub Actions (absence = API attack) |
+| `ReleaseEvent` | Release published |
+| `WatchEvent` | Repo starred (recon indicator) |
+| `MemberEvent` | Collaborator added/removed |
+| `PublicEvent` | Repo made public |
 
-**Key Distinction**:
-- **Events** = Something happened (immutable, from GH Archive)
-- **Observations** = We looked and saw this (point-in-time, from API/Wayback)
-- **Commits come via PushEvent** - there is no separate "CommitEvent" in GH Archive
-
-## Schema Structure
-
-### GH Archive Events (Immutable)
-
-Events are recorded in GitHub's event stream and queryable via BigQuery.
-
-| Type | GH Archive Event | WHEN/WHO/WHAT |
-|------|------------------|---------------|
-| `PushEvent` | `PushEvent` | When pushed / Who pushed / Commits + before/after SHA |
-| `PullRequestEvent` | `PullRequestEvent` | When / Who acted / Action + PR details |
-| `IssueEvent` | `IssuesEvent` | When / Who acted / Action + issue details |
-| `IssueCommentEvent` | `IssueCommentEvent` | When / Who commented / Comment body |
-| `CreateEvent` | `CreateEvent` | When / Who created / Branch/tag/repo created |
-| `DeleteEvent` | `DeleteEvent` | When / Who deleted / Branch/tag deleted |
-| `ForkEvent` | `ForkEvent` | When / Who forked / Source → Fork |
-| `WorkflowRunEvent` | `WorkflowRunEvent` | When / Who triggered / Workflow + conclusion |
-| `ReleaseEvent` | `ReleaseEvent` | When / Who released / Tag + release notes |
-| `WatchEvent` | `WatchEvent` | When / Who starred / Repository |
-| `MemberEvent` | `MemberEvent` | When / Who changed / Member + permission |
-| `PublicEvent` | `PublicEvent` | When / Who / Made repo public |
-
-### API Observations (Point-in-Time)
-
-Observations from querying GitHub API directly.
-
-| Type | Description | WHEN/WHO/WHAT |
-|------|-------------|---------------|
-| `CommitObservation` | Full commit details | Author date / Author+Committer / SHA + message + files |
-| `ForcePushedCommitReference` | Recovered from PushEvent size=0 | Force push time / Pusher / Deleted SHA → Replaced SHA |
-
-### Wayback Snapshots (Point-in-Time)
-
-Archived web pages from Internet Archive.
-
-| Type | Description | WHEN/WHO/WHAT |
-|------|-------------|---------------|
-| `WaybackSnapshot` | Single archived page | Capture time / N/A / URL content at capture |
-| `WaybackObservation` | Collection of snapshots | Time range / N/A / All snapshots for URL |
-| `RecoveredIssueContent` | Issue/PR from snapshot | Capture time / Author / Title + body |
-| `RecoveredFileContent` | File from snapshot | Capture time / N/A / File content |
-| `RecoveredWikiContent` | Wiki from snapshot | Capture time / N/A / Wiki content |
-| `RecoveredForkList` | Forks from network page | Capture time / N/A / Fork list |
-
-## Evidence Examples
-
-### PushEvent (Commits come here!)
+### Example: PushEvent
 
 ```python
 PushEvent(
     evidence_id="push-001",
     when=datetime(2025, 7, 13, 20, 30, 24),
-    what="Pushed 3 commits to refs/heads/main",
-    actor=GitHubActor(login="developer"),
+    who=GitHubActor(login="attacker"),
+    what="Pushed 1 commit to refs/heads/main",
     repository=GitHubRepository(owner="org", name="repo", full_name="org/repo"),
     verification=VerificationInfo(
         source=EvidenceSource.GHARCHIVE,
         bigquery_table="githubarchive.day.20250713",
-        verification_query="SELECT * FROM ... WHERE type='PushEvent'"
+        query="SELECT * FROM ... WHERE type='PushEvent'"
     ),
     ref="refs/heads/main",
-    before_sha="abc123...",  # SHA before push
-    after_sha="def456...",   # New HEAD
-    size=3,
-    commits=[
-        PushEventCommit(sha="...", message="Add feature", author_name="Dev", author_email="..."),
-        # ...
-    ],
+    before_sha="abc123...",
+    after_sha="def456...",
+    size=1,
+    commits=[CommitInPush(sha="def456...", message="backdoor", ...)],
     is_force_push=False
 )
 ```
 
-### Force Push Detection (size=0)
+## Content - Something We Found
 
 ```python
-# Force push = size=0 in PushEvent
-# before_sha points to the "deleted" commit
-PushEvent(
-    when=datetime(2025, 7, 13, 20, 30, 24),
-    what="Force push replaced abc123 with def456",
-    actor=GitHubActor(login="developer"),
-    before_sha="abc123...",  # This commit was force-pushed over
-    after_sha="def456...",   # Replaced with this
-    size=0,                  # Zero commits = force push
-    commits=[],
-    is_force_push=True
-)
+class Content(BaseModel):
+    when_found: datetime       # When we discovered it
+    content_timestamp: datetime | None  # When content was created
+    who: GitHubActor | None    # Creator (if known)
+    what: str                  # What the content is
+    where_found: str           # Source location
+    found_by: EvidenceSource   # How we found it
+    verification: VerificationInfo
 ```
 
-### CommitObservation (Direct API query)
+### Content Types
+
+| Type | Source | What |
+|------|--------|------|
+| `CommitContent` | GitHub API/web/git | Full commit details |
+| `ForcePushedCommitRef` | GH Archive PushEvent | Reference to overwritten commit |
+| `WaybackContent` | Wayback CDX | Collection of snapshots |
+| `RecoveredIssue` | Wayback/GH Archive | Issue/PR text |
+| `RecoveredFile` | Wayback | File content |
+| `RecoveredWiki` | Wayback | Wiki page |
+| `RecoveredForks` | Wayback | Fork list |
+
+### Example: CommitContent
 
 ```python
-CommitObservation(
+CommitContent(
     evidence_id="commit-001",
-    when=datetime(2025, 7, 13, 20, 30, 24),  # author.date
-    what="Commit abc123 with message 'Add backdoor'",
+    when_found=datetime.utcnow(),
+    content_timestamp=datetime(2025, 7, 13, 20, 30, 24),
+    who=GitHubActor(login="attacker"),
+    what="Commit def456 containing backdoor",
+    where_found="https://github.com/org/repo/commit/def456...",
+    found_by=EvidenceSource.GITHUB_API,
+    repository=GitHubRepository(...),
     verification=VerificationInfo(
         source=EvidenceSource.GITHUB_API,
-        verification_url="https://github.com/org/repo/commit/abc123..."
+        url="https://github.com/org/repo/commit/def456..."
     ),
-    repository=GitHubRepository(...),
-    sha="abc123def456...",  # Full 40-char SHA required
-    short_sha="abc123d",
-    message="Add backdoor",
-    author=CommitAuthor(name="Attacker", email="...", date=datetime(...)),
+    sha="def456789...",  # Full 40-char
+    message="Add feature",
+    author=CommitAuthor(name="Attacker", email="...", date=...),
     committer=CommitAuthor(...),
-    files=[CommitFileChange(filename="src/evil.py", status="added", ...)],
-    is_dangling=True,          # Not on any branch
-    recovered_via="api"        # How we got it
+    files=[CommitFileChange(filename="backdoor.py", status="added")],
+    is_dangling=True  # Force-pushed over
 )
 ```
 
-### WaybackObservation
+## IOC - Indicator of Compromise
+
+Same structure as Content. For indicators extracted from events/content or from security blogs.
 
 ```python
-WaybackObservation(
-    evidence_id="wayback-001",
-    when=datetime(2023, 6, 15, 14, 23, 11),  # Capture time
-    what="Archived snapshots of github.com/deleted/repo",
-    verification=VerificationInfo(
-        source=EvidenceSource.WAYBACK,
-        verification_url="https://web.archive.org/cdx/search/cdx?url=github.com/deleted/repo"
-    ),
-    content_type="repository_homepage",
-    original_url="https://github.com/deleted/repo",
-    snapshots=[...],
-    latest_snapshot=WaybackSnapshot(
-        timestamp="20230615142311",
-        captured_at=datetime(2023, 6, 15, 14, 23, 11),
-        original_url="https://github.com/deleted/repo",
-        archive_url="https://web.archive.org/web/20230615142311/https://github.com/deleted/repo",
-        status_code=200
-    ),
-    earliest_snapshot=...,
-    total_snapshots=5
+class IOC(BaseModel):
+    when_found: datetime
+    first_seen: datetime | None
+    last_seen: datetime | None
+    who: GitHubActor | None    # Associated actor
+    ioc_type: IOCType          # commit_sha, email, username, etc.
+    value: str                 # The IOC value
+    what: str                  # Context
+    where_found: str           # Source
+    found_by: EvidenceSource
+    extracted_from: str | None  # Evidence ID if extracted
+    confidence: Literal["confirmed", "high", "medium", "low"]
+```
+
+### IOC Types
+
+`commit_sha`, `file_path`, `email`, `username`, `repository`, `tag_name`, `branch_name`, `workflow_name`, `ip_address`, `domain`, `api_key`, `secret`, `url`, `other`
+
+### Example: IOC from Security Blog
+
+```python
+IOC(
+    evidence_id="ioc-001",
+    when_found=datetime.utcnow(),
+    first_seen=datetime(2025, 7, 13),
+    ioc_type=IOCType.COMMIT_SHA,
+    value="678851bbe9776228f55e0460e66a6167ac2a1685",
+    what="Malicious commit in Amazon Q attack",
+    where_found="https://security-blog.example.com/amazon-q-analysis",
+    found_by=EvidenceSource.SECURITY_BLOG,
+    repository=GitHubRepository(owner="aws", name="aws-toolkit-vscode", full_name="aws/aws-toolkit-vscode"),
+    confidence="confirmed"
 )
 ```
 
-### Workflow Absence Detection
+## Investigation Container
 
 ```python
-# CRITICAL: No WorkflowRunEvent during suspicious commit = Direct API attack
-# Query GH Archive for WorkflowRunEvent in time window around malicious commit
-# Empty results = Token stolen and used directly, not via workflow
+class Investigation(BaseModel):
+    investigation_id: str
+    title: str
+    description: str
+
+    # Evidence (separated by type)
+    events: list[AnyEvent]      # Things that happened
+    content: list[AnyContent]   # Things we found
+    iocs: list[IOC]             # Indicators
+
+    # Analysis
+    timeline: list[TimelineEntry]
+    actors: list[ActorProfile]
+    findings: str | None
+    recommendations: list[str]
 ```
 
-## Type Aliases
+## Sources Summary
 
-```python
-# All GH Archive event types
-GitHubArchiveEvent = PushEvent | PullRequestEvent | IssueEvent | ...
-
-# All point-in-time observations
-Observation = CommitObservation | WaybackObservation | ...
-
-# Everything
-AnyEvidence = GitHubArchiveEvent | Observation
-```
-
-## IOC Types
-
-| IOC Type | Example | Found In |
-|----------|---------|----------|
-| `commit_sha` | `678851bbe9...` | PushEvent, CommitObservation |
-| `username` | `lkmanka58` | GitHubActor |
-| `email` | `attacker@evil.com` | CommitAuthor |
-| `repository` | `lkmanka58/code_whisperer` | GitHubRepository |
-| `tag_name` | `stability` | CreateEvent, ReleaseEvent |
-| `branch_name` | `feature/backdoor` | PushEvent, CreateEvent |
-| `workflow_name` | `deploy-automation` | WorkflowRunEvent |
-| `file_path` | `.env`, `config.json` | CommitFileChange |
-| `api_key_pattern` | `ghp_...`, `AKIA...` | Recovered content |
+| Source | Used For |
+|--------|----------|
+| `GHARCHIVE` | Events, force-push detection, deleted PR/issue recovery |
+| `GIT_LOG` | Local events from git history |
+| `GITHUB_API` | Commit content, current state |
+| `GITHUB_WEB` | Commit patches, dangling commits |
+| `WAYBACK` | Deleted content recovery |
+| `SECURITY_BLOG` | External IOCs |
 
 ## Related Skills
 
-- **github-archive**: Query GH Archive to populate event types
-- **github-commit-recovery**: Recover commits using SHAs from PushEvent
-- **github-wayback-recovery**: Recover deleted content for Wayback observations
-
-## Usage Notes
-
-1. **Commits are NOT events** - they come embedded in `PushEvent`
-2. **Use `CommitObservation`** only for direct API/web queries
-3. **Force push detection**: `PushEvent.size == 0`
-4. **Wayback = snapshots**, not events - they capture what existed at crawl time
-5. **Always include verification info** with BigQuery query or URL
+- **github-archive**: Query GH Archive for events
+- **github-commit-recovery**: Recover commits using SHAs
+- **github-wayback-recovery**: Recover deleted content
