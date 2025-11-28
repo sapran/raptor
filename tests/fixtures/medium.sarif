@@ -1,0 +1,215 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Scanner",
+          "version": "1.0"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "VULN000",
+          "level": "error",
+          "message": {
+            "text": "Vulnerability 0: SQL Injection"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 10,
+                  "endLine": 12
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN001",
+          "level": "warning",
+          "message": {
+            "text": "Vulnerability 1: XSS"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 11,
+                  "endLine": 13
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN002",
+          "level": "error",
+          "message": {
+            "text": "Vulnerability 2: Command Injection"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 12,
+                  "endLine": 14
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN003",
+          "level": "warning",
+          "message": {
+            "text": "Vulnerability 3: Path Traversal"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 13,
+                  "endLine": 15
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN004",
+          "level": "error",
+          "message": {
+            "text": "Vulnerability 4: SSRF"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 14,
+                  "endLine": 16
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN005",
+          "level": "warning",
+          "message": {
+            "text": "Vulnerability 5: SQL Injection"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 15,
+                  "endLine": 17
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN006",
+          "level": "error",
+          "message": {
+            "text": "Vulnerability 6: XSS"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 16,
+                  "endLine": 18
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN007",
+          "level": "warning",
+          "message": {
+            "text": "Vulnerability 7: Command Injection"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 17,
+                  "endLine": 19
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN008",
+          "level": "error",
+          "message": {
+            "text": "Vulnerability 8: Path Traversal"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 18,
+                  "endLine": 20
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN009",
+          "level": "warning",
+          "message": {
+            "text": "Vulnerability 9: SSRF"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 19,
+                  "endLine": 21
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

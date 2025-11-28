@@ -1,0 +1,2015 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Scanner",
+          "version": "1.0"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "VULN0000",
+          "level": "error",
+          "message": {
+            "text": "Issue 0"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 10,
+                  "endLine": 11
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0001",
+          "level": "warning",
+          "message": {
+            "text": "Issue 1"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 11,
+                  "endLine": 12
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0002",
+          "level": "note",
+          "message": {
+            "text": "Issue 2"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 12,
+                  "endLine": 13
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0003",
+          "level": "error",
+          "message": {
+            "text": "Issue 3"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file3.py"
+                },
+                "region": {
+                  "startLine": 13,
+                  "endLine": 14
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0004",
+          "level": "warning",
+          "message": {
+            "text": "Issue 4"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file4.py"
+                },
+                "region": {
+                  "startLine": 14,
+                  "endLine": 15
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0005",
+          "level": "note",
+          "message": {
+            "text": "Issue 5"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file5.py"
+                },
+                "region": {
+                  "startLine": 15,
+                  "endLine": 16
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0006",
+          "level": "error",
+          "message": {
+            "text": "Issue 6"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file6.py"
+                },
+                "region": {
+                  "startLine": 16,
+                  "endLine": 17
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0007",
+          "level": "warning",
+          "message": {
+            "text": "Issue 7"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file7.py"
+                },
+                "region": {
+                  "startLine": 17,
+                  "endLine": 18
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0008",
+          "level": "note",
+          "message": {
+            "text": "Issue 8"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file8.py"
+                },
+                "region": {
+                  "startLine": 18,
+                  "endLine": 19
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0009",
+          "level": "error",
+          "message": {
+            "text": "Issue 9"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file9.py"
+                },
+                "region": {
+                  "startLine": 19,
+                  "endLine": 20
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0010",
+          "level": "warning",
+          "message": {
+            "text": "Issue 10"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 20,
+                  "endLine": 21
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0011",
+          "level": "note",
+          "message": {
+            "text": "Issue 11"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 21,
+                  "endLine": 22
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0012",
+          "level": "error",
+          "message": {
+            "text": "Issue 12"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 22,
+                  "endLine": 23
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0013",
+          "level": "warning",
+          "message": {
+            "text": "Issue 13"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file3.py"
+                },
+                "region": {
+                  "startLine": 23,
+                  "endLine": 24
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0014",
+          "level": "note",
+          "message": {
+            "text": "Issue 14"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file4.py"
+                },
+                "region": {
+                  "startLine": 24,
+                  "endLine": 25
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0015",
+          "level": "error",
+          "message": {
+            "text": "Issue 15"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file5.py"
+                },
+                "region": {
+                  "startLine": 25,
+                  "endLine": 26
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0016",
+          "level": "warning",
+          "message": {
+            "text": "Issue 16"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file6.py"
+                },
+                "region": {
+                  "startLine": 26,
+                  "endLine": 27
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0017",
+          "level": "note",
+          "message": {
+            "text": "Issue 17"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file7.py"
+                },
+                "region": {
+                  "startLine": 27,
+                  "endLine": 28
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0018",
+          "level": "error",
+          "message": {
+            "text": "Issue 18"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file8.py"
+                },
+                "region": {
+                  "startLine": 28,
+                  "endLine": 29
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0019",
+          "level": "warning",
+          "message": {
+            "text": "Issue 19"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file9.py"
+                },
+                "region": {
+                  "startLine": 29,
+                  "endLine": 30
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0020",
+          "level": "note",
+          "message": {
+            "text": "Issue 20"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 30,
+                  "endLine": 31
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0021",
+          "level": "error",
+          "message": {
+            "text": "Issue 21"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 31,
+                  "endLine": 32
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0022",
+          "level": "warning",
+          "message": {
+            "text": "Issue 22"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 32,
+                  "endLine": 33
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0023",
+          "level": "note",
+          "message": {
+            "text": "Issue 23"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file3.py"
+                },
+                "region": {
+                  "startLine": 33,
+                  "endLine": 34
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0024",
+          "level": "error",
+          "message": {
+            "text": "Issue 24"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file4.py"
+                },
+                "region": {
+                  "startLine": 34,
+                  "endLine": 35
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0025",
+          "level": "warning",
+          "message": {
+            "text": "Issue 25"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file5.py"
+                },
+                "region": {
+                  "startLine": 35,
+                  "endLine": 36
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0026",
+          "level": "note",
+          "message": {
+            "text": "Issue 26"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file6.py"
+                },
+                "region": {
+                  "startLine": 36,
+                  "endLine": 37
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0027",
+          "level": "error",
+          "message": {
+            "text": "Issue 27"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file7.py"
+                },
+                "region": {
+                  "startLine": 37,
+                  "endLine": 38
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0028",
+          "level": "warning",
+          "message": {
+            "text": "Issue 28"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file8.py"
+                },
+                "region": {
+                  "startLine": 38,
+                  "endLine": 39
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0029",
+          "level": "note",
+          "message": {
+            "text": "Issue 29"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file9.py"
+                },
+                "region": {
+                  "startLine": 39,
+                  "endLine": 40
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0030",
+          "level": "error",
+          "message": {
+            "text": "Issue 30"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 40,
+                  "endLine": 41
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0031",
+          "level": "warning",
+          "message": {
+            "text": "Issue 31"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 41,
+                  "endLine": 42
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0032",
+          "level": "note",
+          "message": {
+            "text": "Issue 32"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 42,
+                  "endLine": 43
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0033",
+          "level": "error",
+          "message": {
+            "text": "Issue 33"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file3.py"
+                },
+                "region": {
+                  "startLine": 43,
+                  "endLine": 44
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0034",
+          "level": "warning",
+          "message": {
+            "text": "Issue 34"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file4.py"
+                },
+                "region": {
+                  "startLine": 44,
+                  "endLine": 45
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0035",
+          "level": "note",
+          "message": {
+            "text": "Issue 35"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file5.py"
+                },
+                "region": {
+                  "startLine": 45,
+                  "endLine": 46
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0036",
+          "level": "error",
+          "message": {
+            "text": "Issue 36"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file6.py"
+                },
+                "region": {
+                  "startLine": 46,
+                  "endLine": 47
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0037",
+          "level": "warning",
+          "message": {
+            "text": "Issue 37"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file7.py"
+                },
+                "region": {
+                  "startLine": 47,
+                  "endLine": 48
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0038",
+          "level": "note",
+          "message": {
+            "text": "Issue 38"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file8.py"
+                },
+                "region": {
+                  "startLine": 48,
+                  "endLine": 49
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0039",
+          "level": "error",
+          "message": {
+            "text": "Issue 39"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file9.py"
+                },
+                "region": {
+                  "startLine": 49,
+                  "endLine": 50
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0040",
+          "level": "warning",
+          "message": {
+            "text": "Issue 40"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 50,
+                  "endLine": 51
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0041",
+          "level": "note",
+          "message": {
+            "text": "Issue 41"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 51,
+                  "endLine": 52
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0042",
+          "level": "error",
+          "message": {
+            "text": "Issue 42"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 52,
+                  "endLine": 53
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0043",
+          "level": "warning",
+          "message": {
+            "text": "Issue 43"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file3.py"
+                },
+                "region": {
+                  "startLine": 53,
+                  "endLine": 54
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0044",
+          "level": "note",
+          "message": {
+            "text": "Issue 44"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file4.py"
+                },
+                "region": {
+                  "startLine": 54,
+                  "endLine": 55
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0045",
+          "level": "error",
+          "message": {
+            "text": "Issue 45"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file5.py"
+                },
+                "region": {
+                  "startLine": 55,
+                  "endLine": 56
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0046",
+          "level": "warning",
+          "message": {
+            "text": "Issue 46"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file6.py"
+                },
+                "region": {
+                  "startLine": 56,
+                  "endLine": 57
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0047",
+          "level": "note",
+          "message": {
+            "text": "Issue 47"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file7.py"
+                },
+                "region": {
+                  "startLine": 57,
+                  "endLine": 58
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0048",
+          "level": "error",
+          "message": {
+            "text": "Issue 48"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file8.py"
+                },
+                "region": {
+                  "startLine": 58,
+                  "endLine": 59
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0049",
+          "level": "warning",
+          "message": {
+            "text": "Issue 49"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file9.py"
+                },
+                "region": {
+                  "startLine": 59,
+                  "endLine": 60
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0050",
+          "level": "note",
+          "message": {
+            "text": "Issue 50"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 60,
+                  "endLine": 61
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0051",
+          "level": "error",
+          "message": {
+            "text": "Issue 51"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 61,
+                  "endLine": 62
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0052",
+          "level": "warning",
+          "message": {
+            "text": "Issue 52"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 62,
+                  "endLine": 63
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0053",
+          "level": "note",
+          "message": {
+            "text": "Issue 53"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file3.py"
+                },
+                "region": {
+                  "startLine": 63,
+                  "endLine": 64
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0054",
+          "level": "error",
+          "message": {
+            "text": "Issue 54"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file4.py"
+                },
+                "region": {
+                  "startLine": 64,
+                  "endLine": 65
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0055",
+          "level": "warning",
+          "message": {
+            "text": "Issue 55"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file5.py"
+                },
+                "region": {
+                  "startLine": 65,
+                  "endLine": 66
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0056",
+          "level": "note",
+          "message": {
+            "text": "Issue 56"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file6.py"
+                },
+                "region": {
+                  "startLine": 66,
+                  "endLine": 67
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0057",
+          "level": "error",
+          "message": {
+            "text": "Issue 57"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file7.py"
+                },
+                "region": {
+                  "startLine": 67,
+                  "endLine": 68
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0058",
+          "level": "warning",
+          "message": {
+            "text": "Issue 58"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file8.py"
+                },
+                "region": {
+                  "startLine": 68,
+                  "endLine": 69
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0059",
+          "level": "note",
+          "message": {
+            "text": "Issue 59"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file9.py"
+                },
+                "region": {
+                  "startLine": 69,
+                  "endLine": 70
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0060",
+          "level": "error",
+          "message": {
+            "text": "Issue 60"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 70,
+                  "endLine": 71
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0061",
+          "level": "warning",
+          "message": {
+            "text": "Issue 61"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 71,
+                  "endLine": 72
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0062",
+          "level": "note",
+          "message": {
+            "text": "Issue 62"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 72,
+                  "endLine": 73
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0063",
+          "level": "error",
+          "message": {
+            "text": "Issue 63"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file3.py"
+                },
+                "region": {
+                  "startLine": 73,
+                  "endLine": 74
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0064",
+          "level": "warning",
+          "message": {
+            "text": "Issue 64"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file4.py"
+                },
+                "region": {
+                  "startLine": 74,
+                  "endLine": 75
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0065",
+          "level": "note",
+          "message": {
+            "text": "Issue 65"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file5.py"
+                },
+                "region": {
+                  "startLine": 75,
+                  "endLine": 76
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0066",
+          "level": "error",
+          "message": {
+            "text": "Issue 66"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file6.py"
+                },
+                "region": {
+                  "startLine": 76,
+                  "endLine": 77
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0067",
+          "level": "warning",
+          "message": {
+            "text": "Issue 67"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file7.py"
+                },
+                "region": {
+                  "startLine": 77,
+                  "endLine": 78
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0068",
+          "level": "note",
+          "message": {
+            "text": "Issue 68"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file8.py"
+                },
+                "region": {
+                  "startLine": 78,
+                  "endLine": 79
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0069",
+          "level": "error",
+          "message": {
+            "text": "Issue 69"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file9.py"
+                },
+                "region": {
+                  "startLine": 79,
+                  "endLine": 80
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0070",
+          "level": "warning",
+          "message": {
+            "text": "Issue 70"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 80,
+                  "endLine": 81
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0071",
+          "level": "note",
+          "message": {
+            "text": "Issue 71"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 81,
+                  "endLine": 82
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0072",
+          "level": "error",
+          "message": {
+            "text": "Issue 72"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 82,
+                  "endLine": 83
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0073",
+          "level": "warning",
+          "message": {
+            "text": "Issue 73"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file3.py"
+                },
+                "region": {
+                  "startLine": 83,
+                  "endLine": 84
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0074",
+          "level": "note",
+          "message": {
+            "text": "Issue 74"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file4.py"
+                },
+                "region": {
+                  "startLine": 84,
+                  "endLine": 85
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0075",
+          "level": "error",
+          "message": {
+            "text": "Issue 75"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file5.py"
+                },
+                "region": {
+                  "startLine": 85,
+                  "endLine": 86
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0076",
+          "level": "warning",
+          "message": {
+            "text": "Issue 76"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file6.py"
+                },
+                "region": {
+                  "startLine": 86,
+                  "endLine": 87
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0077",
+          "level": "note",
+          "message": {
+            "text": "Issue 77"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file7.py"
+                },
+                "region": {
+                  "startLine": 87,
+                  "endLine": 88
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0078",
+          "level": "error",
+          "message": {
+            "text": "Issue 78"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file8.py"
+                },
+                "region": {
+                  "startLine": 88,
+                  "endLine": 89
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0079",
+          "level": "warning",
+          "message": {
+            "text": "Issue 79"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file9.py"
+                },
+                "region": {
+                  "startLine": 89,
+                  "endLine": 90
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0080",
+          "level": "note",
+          "message": {
+            "text": "Issue 80"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 90,
+                  "endLine": 91
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0081",
+          "level": "error",
+          "message": {
+            "text": "Issue 81"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 91,
+                  "endLine": 92
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0082",
+          "level": "warning",
+          "message": {
+            "text": "Issue 82"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 92,
+                  "endLine": 93
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0083",
+          "level": "note",
+          "message": {
+            "text": "Issue 83"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file3.py"
+                },
+                "region": {
+                  "startLine": 93,
+                  "endLine": 94
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0084",
+          "level": "error",
+          "message": {
+            "text": "Issue 84"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file4.py"
+                },
+                "region": {
+                  "startLine": 94,
+                  "endLine": 95
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0085",
+          "level": "warning",
+          "message": {
+            "text": "Issue 85"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file5.py"
+                },
+                "region": {
+                  "startLine": 95,
+                  "endLine": 96
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0086",
+          "level": "note",
+          "message": {
+            "text": "Issue 86"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file6.py"
+                },
+                "region": {
+                  "startLine": 96,
+                  "endLine": 97
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0087",
+          "level": "error",
+          "message": {
+            "text": "Issue 87"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file7.py"
+                },
+                "region": {
+                  "startLine": 97,
+                  "endLine": 98
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0088",
+          "level": "warning",
+          "message": {
+            "text": "Issue 88"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file8.py"
+                },
+                "region": {
+                  "startLine": 98,
+                  "endLine": 99
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0089",
+          "level": "note",
+          "message": {
+            "text": "Issue 89"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file9.py"
+                },
+                "region": {
+                  "startLine": 99,
+                  "endLine": 100
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0090",
+          "level": "error",
+          "message": {
+            "text": "Issue 90"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file0.py"
+                },
+                "region": {
+                  "startLine": 100,
+                  "endLine": 101
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0091",
+          "level": "warning",
+          "message": {
+            "text": "Issue 91"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file1.py"
+                },
+                "region": {
+                  "startLine": 101,
+                  "endLine": 102
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0092",
+          "level": "note",
+          "message": {
+            "text": "Issue 92"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file2.py"
+                },
+                "region": {
+                  "startLine": 102,
+                  "endLine": 103
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0093",
+          "level": "error",
+          "message": {
+            "text": "Issue 93"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file3.py"
+                },
+                "region": {
+                  "startLine": 103,
+                  "endLine": 104
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0094",
+          "level": "warning",
+          "message": {
+            "text": "Issue 94"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file4.py"
+                },
+                "region": {
+                  "startLine": 104,
+                  "endLine": 105
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0095",
+          "level": "note",
+          "message": {
+            "text": "Issue 95"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file5.py"
+                },
+                "region": {
+                  "startLine": 105,
+                  "endLine": 106
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0096",
+          "level": "error",
+          "message": {
+            "text": "Issue 96"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file6.py"
+                },
+                "region": {
+                  "startLine": 106,
+                  "endLine": 107
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0097",
+          "level": "warning",
+          "message": {
+            "text": "Issue 97"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file7.py"
+                },
+                "region": {
+                  "startLine": 107,
+                  "endLine": 108
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0098",
+          "level": "note",
+          "message": {
+            "text": "Issue 98"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file8.py"
+                },
+                "region": {
+                  "startLine": 108,
+                  "endLine": 109
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "VULN0099",
+          "level": "error",
+          "message": {
+            "text": "Issue 99"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file9.py"
+                },
+                "region": {
+                  "startLine": 109,
+                  "endLine": 110
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
