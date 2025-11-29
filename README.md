@@ -1,18 +1,19 @@
 ```text
 ╔═══════════════════════════════════════════════════════════════════════════╗ 
-+                                                                            ║
-║    ██████╗  █████╗ ██████╗ ████████╗ ██████╗ ██████╗                      ║ 
-║    ██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝██╔═══██╗██╔══██╗                     ║ 
-║    ██████╔╝███████║██████╔╝   ██║   ██║   ██║██████╔╝                     ║ 
-║    ██╔══██╗██╔══██║██╔═══╝    ██║   ██║   ██║██╔══██╗                     ║ 
-║    ██║  ██║██║  ██║██║        ██║   ╚██████╔╝██║  ██║                     ║ 
-║    ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝        ╚═╝    ╚═════╝ ╚═╝  ╚═╝                     ║ 
+║                                                                           ║
+║             ██████╗  █████╗ ██████╗ ████████╗ ██████╗ ██████╗             ║ 
+║             ██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝██╔═══██╗██╔══██╗            ║ 
+║             ██████╔╝███████║██████╔╝   ██║   ██║   ██║██████╔╝            ║ 
+║             ██╔══██╗██╔══██║██╔═══╝    ██║   ██║   ██║██╔══██╗            ║ 
+║             ██║  ██║██║  ██║██║        ██║   ╚██████╔╝██║  ██║            ║ 
+║             ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝        ╚═╝    ╚═════╝ ╚═╝  ╚═╝            ║ 
 ║                                                                           ║ 
-║         Offensive/Defensive Research Framework | Built on Claude Code     ║ 
-║         v1.0-alpha                                                        ║ 
+║             Autonomous Offensive/Defensive Research Framework             ║
+║             Based on Claude Code - v1.0-alpha                             ║
 ║                                                                           ║ 
-║         By Gadi Evron & Daniel Cuthbert                                   ║ 
-║                                                                           - 
+║             By Gadi Evron, Daniel Cuthbert                                ║
+║                Thomas Dullien (Halvar Flake) & Michael Bargury            ║ 
+║                                                                           ║ 
 ╚═══════════════════════════════════════════════════════════════════════════╝ 
                               __                                              
                              / _)                                             
@@ -23,7 +24,8 @@
 
 # RAPTOR - Autonomous Offensive/Defensive Security Research Framework, based on Claude Code
 
-**Authors:** Gadi Evron & Daniel Cuthbert (@gadievron, @danielcuthbert)
+**Authors:** Gadi Evron, Daniel Cuthbert, Thomas Dullien (Halvar Flake), and Michael Bargury
+(@gadievron, @danielcuthbert, @thomasdullien, @mbrg)
 
 **License:** MIT (see LICENSE file)
 
@@ -35,23 +37,35 @@
 
 ## What is RAPTOR?
 
-RAPTOR is an autonomous offensive/defensive security research framework, based on Claude Code. It empowers security research with agentic workflows and automation.
+RAPTOR is an **autonomous offensive/defensive security research framework**, based on
+**Claude Code**. It empowers security research with agentic workflows and automation.
 
-RAPTOR stands for Recursive Autonomous Penetration Testing and Observation Robot (We really wanted to name it RAPTOR)
+RAPTOR stands for Recursive Autonomous Penetration Testing and Observation Robot.
+(We really wanted to name it RAPTOR)
 
-It autonomously:
-
+**RAPTOR autonomously**:
 1. **Scans** your code with Semgrep and CodeQL and tries dataflow validation
 2. **Fuzzes** your binaries with American Fuzzy Lop (AFL)
 3. **Analyses** vulnerabilities using advanced LLM reasoning
-4. **Generates** working exploit proof-of-concepts
-5. **Creates** secure patches to fix vulnerabilities
-6. **Reports** everything in structured formats
+4. **Exploits** by generating proof-of-concepts
+5. **Patches** with code to fix vulnerabilities
+6. **FFmpeg-specific** patching for Google's recent disclosure
+   (https://news.ycombinator.com/item?id=45891016)
+8. **Reports** everything in structured formats
 
-Unlike traditional tools that just flag issues, RAPTOR deeply understands your code, proves exploitability, and proposes fixes.
+RAPTOR combines traditional security tools with agentic automation and analysis, deeply understands your code, proves exploitability, and proposes patches.
 
-While it does use prompting, RAPTOR's main focus is bringing agentic workflows into security research, not replacing traditional security tools.
+**Disclaimer: It's a quick hack, and we can't live without it**:
+No matter the result we got to, RAPTOR itself was hacked together in free time, help together
+by vibe coding and duct tape. We encourage community contributions. it's open source, modular,
+and extensible.
 
+---
+
+## What's unique about RAPTOR?
+Beyond RAPTOR's potential for autonomous security research and community collaboration, it demonstrates how Claude Code can be adapted for any purpose**, with RAPTOR packages.
+
+You can also use RAPTOR on most other coding agents by changing claude.md to the native rules file, from Copilot and Codex, to the VS Code-based ones such as Cursor, Windsurf, Devin, and Cline.
 ---
 
 ## Quick Start
@@ -71,10 +85,8 @@ claude
 "Set my ANTHROPIC_API_KEY to [your-key]"
 
 # 4. Start RAPTOR
-Just say "hi" to get started.
-
-# 5. Testing
-Feel free to try the various capabilities through the tests included with RAPTOR.
+Just say "hi" to get started
+Try /analyze on one of our tests /tests/data
 ```
 
 **See:** `docs/CLAUDE_CODE_USAGE.md` for complete guide
@@ -102,12 +114,13 @@ Feel free to try the various capabilities through the tests included with RAPTOR
 ```
 /exploit  - Generate exploit proof-of-concepts (beta)
 /patch    - Generate security patches for vulnerabilities (beta)
+/crash-analysis - Analyze an FFmpeg crash and generate a validated root-cause analysis
 ```
 
 **Development & testing:**
 ```
 /create-skill    - Save custom approaches (experimental)
-/test-workflows  - Run comprehensive test suite (9 test categories)
+/test-workflows  - Run comprehensive test suite (stub)
 ```
 
 **Expert personas:** (9 total, load on-demand)
@@ -129,7 +142,7 @@ Usage: "Use [persona name]"
 
 **Claude Code Decision System:**
 - Bootstrap (CLAUDE.md) → Always loaded
-- Tier1 (analysis-guidance, recovery) → Auto-loads when relevant
+- Tier1 (adversarial thinking, analysis-guidance, recovery) → Auto-loads when relevant
 - Tier2 (9 expert personas) → Load on explicit request
 - Alpha (custom skills) → User-created
 
@@ -157,9 +170,9 @@ Model selection and API use is handled through Claude Code natively.
 
 | Provider             | Exploit Quality         | Cost        |
 |----------------------|-------------------------|-------------|
-| **Anthropic Claude** | ✅ Compilable C code    | ~$0.01/vuln |
-| **OpenAI GPT-4**     | ✅ Compilable C code    | ~$0.01/vuln |
-| **Gemini 2.5**       | ✅ Compilable C code    | ~$0.01/vuln |
+| **Anthropic Claude** | ✅ Compilable C code    | ~$0.03/vuln |
+| **OpenAI GPT-4**     | ✅ Compilable C code    | ~$0.03/vuln |
+| **Gemini 2.5**       | ✅ Compilable C code    | ~$0.03/vuln |
 | **Ollama (local)**   | ❌ Often broken         | FREE        |
 
 **Note:** Exploit generation requires frontier models (Claude, GPT, or Gemini). Local models work for analysis but may produce non-compilable exploit code.
@@ -195,19 +208,11 @@ python3 raptor.py fuzz --binary /path/to/binary --duration 3600
 
 ## Contribute
 
-RAPTOR is in alpha, and we welcome contributions in:
-- Adversarial thinking patterns (analysis priorities, decision logic)
-- Threat hunting (YARA, Sigma rules, IOC detection)
-- Forensics (memory analysis, artifact collection, timeline analysis)
-- New scanners (SAST, DAST, IAST)
-- Additional fuzzing techniques
-- Web testing capabilities
-- Cloud security scanning
-- Tool coverage and integrations
+RAPTOR is in alpha, and we welcome contributions from anyone, on anything.
 - Your idea here
+- Your second idea here
 
-**Submit pull requests with:**
-We'd love to find new collaborators. Surprise us.
+Submit pull requests.
 
 Chat with us on the #raptor channel at the Prompt||GTFO Slack:
 https://join.slack.com/t/promptgtfo/shared_invite/zt-3alf92eqe-BpVLxPbWTI50Tbl11Hl46Q
@@ -218,7 +223,7 @@ https://join.slack.com/t/promptgtfo/shared_invite/zt-3alf92eqe-BpVLxPbWTI50Tbl11
 
 ## License
 
-MIT License - Copyright (c) 2025 Gadi Evron and Daniel Cuthbert
+MIT License - Copyright (c) 2025 Gadi Evron, Daniel Cuthbert, Thomas Dullien (Halvar Flake), and Michael Bargury
 
 See LICENSE file for full text.
 

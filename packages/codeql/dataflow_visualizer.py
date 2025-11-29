@@ -153,10 +153,17 @@ class DataflowVisualizer:
         })
         edges.append({'source': sink_id - 1, 'target': sink_id})
 
-        # Read source code for each location
+        # Read source code for each location. In some super niche cases, this might be a vulnerability, albeit very unlikely and low impact.
+        # Anyhoo, we fix it by ensuring the file path is within the repo.
         for node in nodes:
             try:
-                file_path = repo_path / node['file']
+                # Validate file path to prevent directory traversal
+                file_path = (repo_path / node['file']).resolve()
+                repo_resolved = repo_path.resolve()
+                if not str(file_path).startswith(str(repo_resolved)):
+                    node['code_context'] = f"Access denied: {node['file']}"
+                    continue
+                
                 if file_path.exists():
                     with open(file_path) as f:
                         lines = f.readlines()
@@ -169,11 +176,12 @@ class DataflowVisualizer:
                         marker = ">>>" if i == node['line'] - 1 else "   "
                         context.append(f"{marker} {i + 1:4d} | {lines[i].rstrip()}")
 
-                    node['code_context'] = '\n'.join(context)
+                    # HTML-escape to prevent injection using code_context
+                    node['code_context'] = escape('\n'.join(context))
                 else:
-                    node['code_context'] = f"File not found: {node['file']}"
+                    node['code_context'] = escape(f"File not found: {node['file']}")
             except Exception as e:
-                node['code_context'] = f"Error reading file: {e}"
+                node['code_context'] = escape(f"Error reading file: {e}")
 
         # Generate HTML
         html_content = self._create_html_template(
@@ -209,7 +217,7 @@ class DataflowVisualizer:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dataflow Visualization - {escape(finding_id)}</title>
+    <title>RAPTOR Dataflow Visualization - {escape(finding_id)}</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         * {{
@@ -432,7 +440,7 @@ class DataflowVisualizer:
 </head>
 <body>
     <div class="header">
-        <h1>CodeQL Dataflow Visualization</h1>
+        <h1>RAPTOR CodeQL Dataflow Visualization</h1>
         <div class="rule">Rule: {escape(rule_id)}</div>
         <div class="message">{escape(message)}</div>
         {f'''

@@ -6,6 +6,7 @@ Unified interface for multiple LLM providers with consistent API.
 """
 
 import json
+import re
 import sys
 import requests
 from abc import ABC, abstractmethod
@@ -345,7 +346,6 @@ Respond with ONLY the JSON object, no markdown, no other text."""
             # Remove thinking tags from reasoning models (qwen3, deepseek-r1, etc.)
             if "<think>" in content.lower():
                 # Extract content after </think> tag
-                import re
                 # Remove everything between <think> and </think> (case insensitive)
                 content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL | re.IGNORECASE)
                 content = content.strip()

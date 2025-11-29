@@ -1022,6 +1022,7 @@ Balance security with usability and performance."""
         patches_generated = 0
         dataflow_validated = 0
         false_positives_found = 0
+        idx = 0  # Initialize idx to prevent UnboundLocalError when unique_findings is empty
 
         # Add progress counter for long operations (>15s per vuln expected)
         with HackerProgress(total=len(unique_findings), operation="Analyzing vulnerabilities") as progress:

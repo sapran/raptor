@@ -27,9 +27,10 @@
 
 RAPTOR is an autonomous security testing framework that combines static analysis, dataflow validation, and binary fuzzing with LLM-powered vulnerability analysis. It aims to autonomously identify, validate, and exploit security vulnerabilities with minimal human intervention.
 
-The framework operates in two distinct modes:
+The framework operates in three distinct modes:
 - **Source Code Analysis Mode**: Static analysis using Semgrep and CodeQL with deep dataflow validation
 - **Binary Fuzzing Mode**: Coverage-guided fuzzing using AFL++ with GDB crash analysis
+- **Crash Analysis Mode**: Autonomous root-cause analysis using rr record-replay, function tracing, and code coverage
 
 RAPTOR leverages Large Language Models to provide intelligent analysis, distinguishing true vulnerabilities from false positives, and generating working exploits and secure patches.
 
@@ -281,6 +282,38 @@ Phase 5: Reporting
 - Format string vulnerabilities
 - Runtime behaviour analysis
 
+### Crash Analysis Mode
+
+**Entry Point**: `/crash-analysis` slash command
+**Input**: `<bug-tracker-url> <git-repo-url>`
+
+**Workflow**:
+```
+Phase 1: Setup
+├─ Fetch bug report from URL
+├─ Clone repository
+└─ Build with AddressSanitizer
+
+Phase 2: Data Collection
+├─ Function tracing (-finstrument-functions)
+├─ Code coverage (gcov)
+└─ rr recording (deterministic replay)
+
+Phase 3: Analysis
+├─ Hypothesis generation (crash-analyzer-agent)
+├─ Hypothesis validation (crash-analyzer-checker-agent)
+└─ Iteration until confirmed
+
+Phase 4: Output
+└─ Confirmed root-cause hypothesis with full pointer chain
+```
+
+**Use Cases**:
+- Security bug triage from bug trackers
+- Deep root-cause analysis of memory corruption
+- Tracing allocation → modification → crash chains
+- Validating vulnerability reports
+
 
 
 ## What's Working
@@ -328,6 +361,16 @@ Phase 5: Reporting
 - [x] Automatic C exploit generation (with frontier models)
 - [x] CVSS scoring and attack scenario generation
 
+### Crash Analysis
+- [x] Slash command `/crash-analysis` for autonomous root-cause analysis
+- [x] Multi-agent system (orchestrator, analyzer, checker, trace generator, coverage generator)
+- [x] rr record-replay integration for deterministic debugging
+- [x] Function tracing with `-finstrument-functions` and Perfetto visualization
+- [x] gcov code coverage collection
+- [x] Hypothesis-validation loop with rigorous checker
+- [x] Support for any bug tracker URL (LLM-based extraction)
+- [x] Support for any C/C++ project (README-based build detection)
+
 ### Quality and Reliability
 - [x] Directory creation with parent support (handles nested finding IDs)
 - [x] Proper tuple unpacking from LLM responses
@@ -373,13 +416,13 @@ Phase 5: Reporting
 
 **Multi-Path Analysis**:
 - Validate all dataflow paths (not just the first one)
-- Compare multiple attack vectors for same vulnerability
-- Identify most exploitable path when multiple exist
+- Compare distinct attack vectors that converge on the same underlying flaw
+- Determine which path offers the highest likelihood of successful exploitation
 
 **Improved Exploit Generation**:
 - Use dataflow validation insights to guide exploit creation
 - Target specific sanitiser bypasses identified during validation
-- Generate polyglot exploits for multiple contexts
+- Construct exploit variants capable of operating across differing input and execution contexts.
 
 ### Medium Term (3-6 Months)
 
@@ -389,7 +432,7 @@ Phase 5: Reporting
 - Combine static analysis findings with dynamic fuzzing
 
 **Web Scanning**:
-- Activate web application testing module
+- Activate web application testing module and leverage OWASP ASVS where possible
 - Integrate with CodeQL findings for web vulnerabilities
 - Automated exploit generation for web vulns (XSS, SQLi, etc.)
 
@@ -736,6 +779,7 @@ RAPTOR is open source and welcomes contributions. Areas where help is needed:
 - **[ARCHITECTURE.md](ARCHITECTURE.md)**: Detailed modular architecture explanation
 - **[FUZZING_QUICKSTART.md](FUZZING_QUICKSTART.md)**: Binary fuzzing mode guide with autonomous corpus generation
 - **[DATAFLOW_VALIDATION_SUMMARY.md](DATAFLOW_VALIDATION_SUMMARY.md)**: Deep dive into dataflow validation (Phase 4)
+- **[crash-analysis.md](crash-analysis.md)**: Autonomous crash root-cause analysis guide
 - **Test Script**: `test_dataflow_analysis.py` - Demonstrates dataflow-aware analysis
 
 

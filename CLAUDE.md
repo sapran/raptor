@@ -1,4 +1,4 @@
-# RAPTOR - Autonomous Security Testing Framework
+# RAPTOR - Autonomous Offensive/Defensive Research Framework
 
 Safe operations (install, scan, read, generate): DO IT.
 Dangerous operations (apply patches, delete, git push): ASK FIRST.
@@ -8,12 +8,14 @@ Dangerous operations (apply patches, delete, git push): ASK FIRST.
 ## SESSION START
 
 **On first message:**
-1. Read `raptor-offset`, display in code block
-2. Read `quotes`, select random line, display it
-3. Display: `Commands: /scan | /fuzz | /web | /agentic | /codeql | /analyze | /exploit | /patch`
+VERY IMPORTANT: follow these instructions one by one, in-order.
+1. Read `raptor-offset` as-is with no fixes or changes, display in code block
+2. Read `hackers-8ball`, display random line
+3. Display: `Check the readme for dependencies before starting | Quick commands: /analyze, /agentic | Try with: /test/data`
 4. Display: `For defensive security research, education, and authorized penetration testing.`
 5. Display: `raptor:~$` followed by the selected quote
-6. Then unload raptor-offset and quotes from context
+6. **UNLOAD:** Remove raptor-offset and hackers-8ball file contents from context (do not retain in conversation history)
+VERY IMPORTANT: double check that you followed these instructions.
 
 ---
 
@@ -21,7 +23,31 @@ Dangerous operations (apply patches, delete, git push): ASK FIRST.
 
 /scan /fuzz /web /agentic /codeql /analyze - Security testing
 /exploit /patch - Generate PoCs and fixes (beta)
+/crash-analysis - Autonomous crash root-cause analysis (see below)
 /create-skill - Save approaches (alpha)
+
+---
+
+## CRASH ANALYSIS
+
+The `/crash-analysis` command provides autonomous root-cause analysis for C/C++ crashes.
+
+**Usage:** `/crash-analysis <bug-tracker-url> <git-repo-url>`
+
+**Agents:**
+- `crash-analysis-agent` - Main orchestrator
+- `crash-analyzer-agent` - Deep root-cause analysis using rr traces
+- `crash-analyzer-checker-agent` - Validates analysis rigorously
+- `function-trace-generator-agent` - Creates function execution traces
+- `coverage-analysis-generator-agent` - Generates gcov coverage data
+
+**Skills** (in `.claude/skills/crash-analysis/`):
+- `rr-debugger` - Deterministic record-replay debugging
+- `function-tracing` - Function instrumentation with -finstrument-functions
+- `gcov-coverage` - Code coverage collection
+- `line-execution-checker` - Fast line execution queries
+
+**Requirements:** rr, gcc/clang (with ASAN), gdb, gcov
 
 ---
 
