@@ -378,16 +378,50 @@ class GHArchiveClient:
 
     def _get_client(self) -> Any:
         if self._client is None:
+            import os
             from google.cloud import bigquery
             from google.oauth2 import service_account
 
+            credentials = None
+            project = self.project_id
+
+            # First, try explicit credentials path
             if self.credentials_path:
                 credentials = service_account.Credentials.from_service_account_file(
                     self.credentials_path, scopes=["https://www.googleapis.com/auth/bigquery"]
                 )
-                self._client = bigquery.Client(credentials=credentials, project=credentials.project_id)
+                project = credentials.project_id
             else:
-                self._client = bigquery.Client(project=self.project_id)
+                # Check GOOGLE_APPLICATION_CREDENTIALS - could be path or JSON content
+                creds_env = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "")
+                if creds_env:
+                    # Strip surrounding quotes if present (shell quoting)
+                    creds_env = creds_env.strip()
+                    if creds_env.startswith("'") and creds_env.endswith("'"):
+                        creds_env = creds_env[1:-1]
+                    elif creds_env.startswith('"') and creds_env.endswith('"'):
+                        creds_env = creds_env[1:-1]
+
+                    # If it starts with '{', treat as JSON content
+                    if creds_env.startswith("{"):
+                        creds_info = json.loads(creds_env)
+                        credentials = service_account.Credentials.from_service_account_info(
+                            creds_info, scopes=["https://www.googleapis.com/auth/bigquery"]
+                        )
+                        project = creds_info.get("project_id", project)
+                    elif os.path.exists(creds_env):
+                        # It's a file path
+                        credentials = service_account.Credentials.from_service_account_file(
+                            creds_env, scopes=["https://www.googleapis.com/auth/bigquery"]
+                        )
+                        project = credentials.project_id
+
+            if credentials:
+                self._client = bigquery.Client(credentials=credentials, project=project)
+            else:
+                # Fall back to default credentials
+                self._client = bigquery.Client(project=project)
+
         return self._client
 
     def query_events(
@@ -565,6 +599,23 @@ def _make_github_actor(login: str, actor_id: int | None = None) -> GitHubActor:
     return GitHubActor(login=login, id=actor_id)
 
 
+class _GHArchiveRowContext:
+    """Extracted common data from a GH Archive row."""
+
+    __slots__ = ("payload", "owner", "name", "when", "who", "repository", "verification")
+
+    def __init__(self, row: dict[str, Any]):
+        self.payload = json.loads(row["payload"]) if isinstance(row["payload"], str) else row["payload"]
+        self.owner, self.name = row["repo_name"].split("/", 1)
+        self.when = _parse_datetime(row["created_at"])
+        self.who = _make_github_actor(row["actor_login"], row.get("actor_id"))
+        self.repository = _make_github_repo(self.owner, self.name)
+        self.verification = VerificationInfo(
+            source=EvidenceSource.GHARCHIVE,
+            bigquery_table="githubarchive.day.*",
+        )
+
+
 # =============================================================================
 # EVENT CREATION FUNCTIONS - From GHArchive/Git
 # =============================================================================
@@ -572,8 +623,8 @@ def _make_github_actor(login: str, actor_id: int | None = None) -> GitHubActor:
 
 def create_push_event_from_gharchive(row: dict[str, Any]) -> PushEvent:
     """Create PushEvent from GH Archive row."""
-    payload = json.loads(row["payload"]) if isinstance(row["payload"], str) else row["payload"]
-    owner, name = row["repo_name"].split("/", 1)
+    ctx = _GHArchiveRowContext(row)
+    payload = ctx.payload
 
     commits = []
     for c in payload.get("commits", []):
@@ -593,13 +644,13 @@ def create_push_event_from_gharchive(row: dict[str, Any]) -> PushEvent:
 
     return PushEvent(
         evidence_id=_generate_evidence_id("push", row["repo_name"], after_sha),
-        when=_parse_datetime(row["created_at"]),
-        who=_make_github_actor(row["actor_login"], row.get("actor_id")),
+        when=ctx.when,
+        who=ctx.who,
         what=f"Pushed {size} commit(s) to {payload.get('ref', 'unknown')}",
-        repository=_make_github_repo(owner, name),
+        repository=ctx.repository,
         verification=VerificationInfo(
             source=EvidenceSource.GHARCHIVE,
-            bigquery_table=f"githubarchive.day.*",
+            bigquery_table="githubarchive.day.*",
             query=f"actor.login='{row['actor_login']}' AND repo.name='{row['repo_name']}'",
         ),
         ref=payload.get("ref", ""),
@@ -613,11 +664,10 @@ def create_push_event_from_gharchive(row: dict[str, Any]) -> PushEvent:
 
 def create_pull_request_event_from_gharchive(row: dict[str, Any]) -> PullRequestEvent:
     """Create PullRequestEvent from GH Archive row."""
-    payload = json.loads(row["payload"]) if isinstance(row["payload"], str) else row["payload"]
-    owner, name = row["repo_name"].split("/", 1)
-    pr = payload.get("pull_request", {})
+    ctx = _GHArchiveRowContext(row)
+    pr = ctx.payload.get("pull_request", {})
 
-    action_str = payload.get("action", "opened")
+    action_str = ctx.payload.get("action", "opened")
     action_map = {"opened": PRAction.OPENED, "closed": PRAction.CLOSED, "reopened": PRAction.REOPENED}
     action = action_map.get(action_str, PRAction.OPENED)
     if action_str == "closed" and pr.get("merged"):
@@ -625,14 +675,11 @@ def create_pull_request_event_from_gharchive(row: dict[str, Any]) -> PullRequest
 
     return PullRequestEvent(
         evidence_id=_generate_evidence_id("pr", row["repo_name"], str(pr.get("number", 0)), action_str),
-        when=_parse_datetime(row["created_at"]),
-        who=_make_github_actor(row["actor_login"], row.get("actor_id")),
+        when=ctx.when,
+        who=ctx.who,
         what=f"PR #{pr.get('number')} {action_str}",
-        repository=_make_github_repo(owner, name),
-        verification=VerificationInfo(
-            source=EvidenceSource.GHARCHIVE,
-            bigquery_table="githubarchive.day.*",
-        ),
+        repository=ctx.repository,
+        verification=ctx.verification,
         action=action,
         pr_number=pr.get("number", 0),
         pr_title=pr.get("title", ""),
@@ -644,11 +691,10 @@ def create_pull_request_event_from_gharchive(row: dict[str, Any]) -> PullRequest
 
 def create_issue_event_from_gharchive(row: dict[str, Any]) -> IssueEvent:
     """Create IssueEvent from GH Archive row."""
-    payload = json.loads(row["payload"]) if isinstance(row["payload"], str) else row["payload"]
-    owner, name = row["repo_name"].split("/", 1)
-    issue = payload.get("issue", {})
+    ctx = _GHArchiveRowContext(row)
+    issue = ctx.payload.get("issue", {})
 
-    action_str = payload.get("action", "opened")
+    action_str = ctx.payload.get("action", "opened")
     action_map = {
         "opened": IssueAction.OPENED,
         "closed": IssueAction.CLOSED,
@@ -659,14 +705,11 @@ def create_issue_event_from_gharchive(row: dict[str, Any]) -> IssueEvent:
 
     return IssueEvent(
         evidence_id=_generate_evidence_id("issue", row["repo_name"], str(issue.get("number", 0)), action_str),
-        when=_parse_datetime(row["created_at"]),
-        who=_make_github_actor(row["actor_login"], row.get("actor_id")),
+        when=ctx.when,
+        who=ctx.who,
         what=f"Issue #{issue.get('number')} {action_str}",
-        repository=_make_github_repo(owner, name),
-        verification=VerificationInfo(
-            source=EvidenceSource.GHARCHIVE,
-            bigquery_table="githubarchive.day.*",
-        ),
+        repository=ctx.repository,
+        verification=ctx.verification,
         action=action,
         issue_number=issue.get("number", 0),
         issue_title=issue.get("title", ""),
@@ -676,22 +719,18 @@ def create_issue_event_from_gharchive(row: dict[str, Any]) -> IssueEvent:
 
 def create_issue_comment_event_from_gharchive(row: dict[str, Any]) -> IssueCommentEvent:
     """Create IssueCommentEvent from GH Archive row."""
-    payload = json.loads(row["payload"]) if isinstance(row["payload"], str) else row["payload"]
-    owner, name = row["repo_name"].split("/", 1)
-    issue = payload.get("issue", {})
-    comment = payload.get("comment", {})
+    ctx = _GHArchiveRowContext(row)
+    issue = ctx.payload.get("issue", {})
+    comment = ctx.payload.get("comment", {})
 
     return IssueCommentEvent(
         evidence_id=_generate_evidence_id("comment", row["repo_name"], str(comment.get("id", 0))),
-        when=_parse_datetime(row["created_at"]),
-        who=_make_github_actor(row["actor_login"], row.get("actor_id")),
+        when=ctx.when,
+        who=ctx.who,
         what=f"Comment on issue #{issue.get('number')}",
-        repository=_make_github_repo(owner, name),
-        verification=VerificationInfo(
-            source=EvidenceSource.GHARCHIVE,
-            bigquery_table="githubarchive.day.*",
-        ),
-        action=payload.get("action", "created"),
+        repository=ctx.repository,
+        verification=ctx.verification,
+        action=ctx.payload.get("action", "created"),
         issue_number=issue.get("number", 0),
         comment_id=comment.get("id", 0),
         comment_body=comment.get("body", ""),
@@ -700,25 +739,20 @@ def create_issue_comment_event_from_gharchive(row: dict[str, Any]) -> IssueComme
 
 def create_create_event_from_gharchive(row: dict[str, Any]) -> CreateEvent:
     """Create CreateEvent from GH Archive row."""
-    payload = json.loads(row["payload"]) if isinstance(row["payload"], str) else row["payload"]
-    owner, name = row["repo_name"].split("/", 1)
+    ctx = _GHArchiveRowContext(row)
 
-    ref_type_str = payload.get("ref_type", "branch")
+    ref_type_str = ctx.payload.get("ref_type", "branch")
     ref_type_map = {"branch": RefType.BRANCH, "tag": RefType.TAG, "repository": RefType.REPOSITORY}
     ref_type = ref_type_map.get(ref_type_str, RefType.BRANCH)
-
-    ref_name = payload.get("ref", "")
+    ref_name = ctx.payload.get("ref", "")
 
     return CreateEvent(
         evidence_id=_generate_evidence_id("create", row["repo_name"], ref_type_str, ref_name),
-        when=_parse_datetime(row["created_at"]),
-        who=_make_github_actor(row["actor_login"], row.get("actor_id")),
+        when=ctx.when,
+        who=ctx.who,
         what=f"Created {ref_type_str} '{ref_name}'",
-        repository=_make_github_repo(owner, name),
-        verification=VerificationInfo(
-            source=EvidenceSource.GHARCHIVE,
-            bigquery_table="githubarchive.day.*",
-        ),
+        repository=ctx.repository,
+        verification=ctx.verification,
         ref_type=ref_type,
         ref_name=ref_name,
     )
@@ -726,25 +760,20 @@ def create_create_event_from_gharchive(row: dict[str, Any]) -> CreateEvent:
 
 def create_delete_event_from_gharchive(row: dict[str, Any]) -> DeleteEvent:
     """Create DeleteEvent from GH Archive row."""
-    payload = json.loads(row["payload"]) if isinstance(row["payload"], str) else row["payload"]
-    owner, name = row["repo_name"].split("/", 1)
+    ctx = _GHArchiveRowContext(row)
 
-    ref_type_str = payload.get("ref_type", "branch")
+    ref_type_str = ctx.payload.get("ref_type", "branch")
     ref_type_map = {"branch": RefType.BRANCH, "tag": RefType.TAG}
     ref_type = ref_type_map.get(ref_type_str, RefType.BRANCH)
-
-    ref_name = payload.get("ref", "")
+    ref_name = ctx.payload.get("ref", "")
 
     return DeleteEvent(
         evidence_id=_generate_evidence_id("delete", row["repo_name"], ref_type_str, ref_name),
-        when=_parse_datetime(row["created_at"]),
-        who=_make_github_actor(row["actor_login"], row.get("actor_id")),
+        when=ctx.when,
+        who=ctx.who,
         what=f"Deleted {ref_type_str} '{ref_name}'",
-        repository=_make_github_repo(owner, name),
-        verification=VerificationInfo(
-            source=EvidenceSource.GHARCHIVE,
-            bigquery_table="githubarchive.day.*",
-        ),
+        repository=ctx.repository,
+        verification=ctx.verification,
         ref_type=ref_type,
         ref_name=ref_name,
     )
@@ -752,29 +781,24 @@ def create_delete_event_from_gharchive(row: dict[str, Any]) -> DeleteEvent:
 
 def create_fork_event_from_gharchive(row: dict[str, Any]) -> ForkEvent:
     """Create ForkEvent from GH Archive row."""
-    payload = json.loads(row["payload"]) if isinstance(row["payload"], str) else row["payload"]
-    owner, name = row["repo_name"].split("/", 1)
-    forkee = payload.get("forkee", {})
+    ctx = _GHArchiveRowContext(row)
+    forkee = ctx.payload.get("forkee", {})
 
     return ForkEvent(
         evidence_id=_generate_evidence_id("fork", row["repo_name"], forkee.get("full_name", "")),
-        when=_parse_datetime(row["created_at"]),
-        who=_make_github_actor(row["actor_login"], row.get("actor_id")),
+        when=ctx.when,
+        who=ctx.who,
         what=f"Forked to {forkee.get('full_name', '')}",
-        repository=_make_github_repo(owner, name),
-        verification=VerificationInfo(
-            source=EvidenceSource.GHARCHIVE,
-            bigquery_table="githubarchive.day.*",
-        ),
+        repository=ctx.repository,
+        verification=ctx.verification,
         fork_full_name=forkee.get("full_name", ""),
     )
 
 
 def create_workflow_run_event_from_gharchive(row: dict[str, Any]) -> WorkflowRunEvent:
     """Create WorkflowRunEvent from GH Archive row."""
-    payload = json.loads(row["payload"]) if isinstance(row["payload"], str) else row["payload"]
-    owner, name = row["repo_name"].split("/", 1)
-    workflow_run = payload.get("workflow_run", {})
+    ctx = _GHArchiveRowContext(row)
+    workflow_run = ctx.payload.get("workflow_run", {})
 
     conclusion_str = workflow_run.get("conclusion")
     conclusion_map = {
@@ -786,15 +810,12 @@ def create_workflow_run_event_from_gharchive(row: dict[str, Any]) -> WorkflowRun
 
     return WorkflowRunEvent(
         evidence_id=_generate_evidence_id("workflow", row["repo_name"], str(workflow_run.get("id", 0))),
-        when=_parse_datetime(row["created_at"]),
-        who=_make_github_actor(row["actor_login"], row.get("actor_id")),
-        what=f"Workflow '{workflow_run.get('name', '')}' {payload.get('action', '')}",
-        repository=_make_github_repo(owner, name),
-        verification=VerificationInfo(
-            source=EvidenceSource.GHARCHIVE,
-            bigquery_table="githubarchive.day.*",
-        ),
-        action=payload.get("action", "requested"),
+        when=ctx.when,
+        who=ctx.who,
+        what=f"Workflow '{workflow_run.get('name', '')}' {ctx.payload.get('action', '')}",
+        repository=ctx.repository,
+        verification=ctx.verification,
+        action=ctx.payload.get("action", "requested"),
         workflow_name=workflow_run.get("name", ""),
         head_sha=workflow_run.get("head_sha", ""),
         conclusion=conclusion,
@@ -803,21 +824,17 @@ def create_workflow_run_event_from_gharchive(row: dict[str, Any]) -> WorkflowRun
 
 def create_release_event_from_gharchive(row: dict[str, Any]) -> ReleaseEvent:
     """Create ReleaseEvent from GH Archive row."""
-    payload = json.loads(row["payload"]) if isinstance(row["payload"], str) else row["payload"]
-    owner, name = row["repo_name"].split("/", 1)
-    release = payload.get("release", {})
+    ctx = _GHArchiveRowContext(row)
+    release = ctx.payload.get("release", {})
 
     return ReleaseEvent(
         evidence_id=_generate_evidence_id("release", row["repo_name"], release.get("tag_name", "")),
-        when=_parse_datetime(row["created_at"]),
-        who=_make_github_actor(row["actor_login"], row.get("actor_id")),
-        what=f"Release '{release.get('tag_name', '')}' {payload.get('action', '')}",
-        repository=_make_github_repo(owner, name),
-        verification=VerificationInfo(
-            source=EvidenceSource.GHARCHIVE,
-            bigquery_table="githubarchive.day.*",
-        ),
-        action=payload.get("action", "published"),
+        when=ctx.when,
+        who=ctx.who,
+        what=f"Release '{release.get('tag_name', '')}' {ctx.payload.get('action', '')}",
+        repository=ctx.repository,
+        verification=ctx.verification,
+        action=ctx.payload.get("action", "published"),
         tag_name=release.get("tag_name", ""),
         release_name=release.get("name"),
         release_body=release.get("body"),
@@ -826,56 +843,46 @@ def create_release_event_from_gharchive(row: dict[str, Any]) -> ReleaseEvent:
 
 def create_watch_event_from_gharchive(row: dict[str, Any]) -> WatchEvent:
     """Create WatchEvent from GH Archive row."""
-    owner, name = row["repo_name"].split("/", 1)
+    ctx = _GHArchiveRowContext(row)
 
     return WatchEvent(
         evidence_id=_generate_evidence_id("watch", row["repo_name"], row["actor_login"]),
-        when=_parse_datetime(row["created_at"]),
-        who=_make_github_actor(row["actor_login"], row.get("actor_id")),
+        when=ctx.when,
+        who=ctx.who,
         what="Starred repository",
-        repository=_make_github_repo(owner, name),
-        verification=VerificationInfo(
-            source=EvidenceSource.GHARCHIVE,
-            bigquery_table="githubarchive.day.*",
-        ),
+        repository=ctx.repository,
+        verification=ctx.verification,
     )
 
 
 def create_member_event_from_gharchive(row: dict[str, Any]) -> MemberEvent:
     """Create MemberEvent from GH Archive row."""
-    payload = json.loads(row["payload"]) if isinstance(row["payload"], str) else row["payload"]
-    owner, name = row["repo_name"].split("/", 1)
-    member = payload.get("member", {})
+    ctx = _GHArchiveRowContext(row)
+    member = ctx.payload.get("member", {})
 
     return MemberEvent(
         evidence_id=_generate_evidence_id("member", row["repo_name"], member.get("login", "")),
-        when=_parse_datetime(row["created_at"]),
-        who=_make_github_actor(row["actor_login"], row.get("actor_id")),
-        what=f"Member {member.get('login', '')} {payload.get('action', '')}",
-        repository=_make_github_repo(owner, name),
-        verification=VerificationInfo(
-            source=EvidenceSource.GHARCHIVE,
-            bigquery_table="githubarchive.day.*",
-        ),
-        action=payload.get("action", "added"),
+        when=ctx.when,
+        who=ctx.who,
+        what=f"Member {member.get('login', '')} {ctx.payload.get('action', '')}",
+        repository=ctx.repository,
+        verification=ctx.verification,
+        action=ctx.payload.get("action", "added"),
         member=_make_github_actor(member.get("login", ""), member.get("id")),
     )
 
 
 def create_public_event_from_gharchive(row: dict[str, Any]) -> PublicEvent:
     """Create PublicEvent from GH Archive row."""
-    owner, name = row["repo_name"].split("/", 1)
+    ctx = _GHArchiveRowContext(row)
 
     return PublicEvent(
         evidence_id=_generate_evidence_id("public", row["repo_name"]),
-        when=_parse_datetime(row["created_at"]),
-        who=_make_github_actor(row["actor_login"], row.get("actor_id")),
+        when=ctx.when,
+        who=ctx.who,
         what="Made repository public",
-        repository=_make_github_repo(owner, name),
-        verification=VerificationInfo(
-            source=EvidenceSource.GHARCHIVE,
-            bigquery_table="githubarchive.day.*",
-        ),
+        repository=ctx.repository,
+        verification=ctx.verification,
     )
 
 

@@ -10,8 +10,22 @@ Run with: pytest tests/test_integration.py -v -m integration
 
 To skip these in CI: pytest -m "not integration"
 
-Requirements:
-- GOOGLE_APPLICATION_CREDENTIALS (for BigQuery tests, optional)
+GH Archive BigQuery Credentials (two options):
+
+Option 1: JSON file path
+    export GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
+
+Option 2: JSON content directly (useful for .env files or CI secrets)
+    export GOOGLE_APPLICATION_CREDENTIALS='{"type":"service_account",...}'
+
+    Note: The JSON can be wrapped in single quotes. The client will
+    auto-detect JSON content vs file path.
+
+For .env file usage:
+    # .env
+    GOOGLE_APPLICATION_CREDENTIALS='{"type":"service_account","project_id":"...",...}'
+
+    Then use python-dotenv or similar to load it before running tests.
 """
 
 import sys
