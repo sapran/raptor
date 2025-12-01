@@ -74,6 +74,9 @@ demonstrates how Claude Code can be adapted for any purpose**, with RAPTOR packa
 ## Quick Start
 
 ```bash
+You have two options, install on your own, or deploy the devcontainer.
+
+**Install**
 # 1. Install Claude Code
 # Download from: https://claude.ai/download
 
@@ -87,9 +90,21 @@ claude
 "Install semgrep"
 "Set my ANTHROPIC_API_KEY to [your-key]"
 
-# 4. Start RAPTOR
+**devcontainer**
+# 4. Get the devcontainer
+A devcontainer with all prerequisites pre-installed is available. Open in VS Code or any of
+its forks with command Dev Container: Open Folder in Container, or build with docker:
+docker build -f .devcontainer/Dockerfile -t raptor-devcontainer:latest ..
+
+Runs with --privileged flag for rr.
+
+# 5. Notes
+The devcontainer is massive (~6GB), starting with Microsoft Python 3.12 massive devcontainer and
+adding static analysis, fuzzing and browser automation tools.
+
+# 6. Getting started with RAPTOR
 Just say "hi" to get started
-Try /analyze on one of our tests /tests/data
+Try /analyze on one of our tests in /tests/data
 ```
 
 **See:** `docs/CLAUDE_CODE_USAGE.md` for complete guide
