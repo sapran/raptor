@@ -13,3 +13,6 @@ out/
 # Local
 .env*
 .claude/*.local.json
+
+# Runtime artifacts
+codeql_dbs/
