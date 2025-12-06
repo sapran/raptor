@@ -96,7 +96,6 @@ RAPTOR now features comprehensive radare2 (r2) integration for advanced crash an
 
 **Architecture:** Optimized for reliability with inline analysis pattern ensuring consistent results across r2 versions.
 
-**Documentation:** See `IMPLEMENTATION_SUMMARY.md` and `STATE_CHECKPOINT_2025-12-04.md` for complete details.
 
 ### OSS Forensics Investigation
 
