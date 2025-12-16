@@ -8,6 +8,7 @@ validation, and cleanup.
 
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -331,9 +332,41 @@ class DatabaseManager:
         ]
 
         # Add build command if provided
+        build_script_path = None
         if build_system and build_system.command:
-            cmd.append(f"--command={build_system.command}")
-            logger.info(f"Build command: {build_system.command}")
+            # Check if command contains shell operators
+            build_cmd = build_system.command
+            shell_operators = ['&&', '||', ';', '|', '>', '<', '$(', '`']
+            needs_shell = any(op in build_cmd for op in shell_operators)
+
+            if needs_shell:
+                # Create temporary build script for complex commands
+                import tempfile
+                build_script_fd, build_script_path = tempfile.mkstemp(
+                    suffix='.sh',
+                    prefix=f'raptor_build_{language}_',
+                    text=True
+                )
+                try:
+                    with os.fdopen(build_script_fd, 'w') as f:
+                        f.write("#!/bin/bash\n")
+                        f.write("set -e\n")  # Exit on error
+                        f.write(f"{build_cmd}\n")
+
+                    # Make script executable
+                    os.chmod(build_script_path, 0o755)
+
+                    cmd.append(f"--command={build_script_path}")
+                    logger.info(f"Build command (via script): {build_cmd}")
+                    logger.info(f"Build script: {build_script_path}")
+                except Exception as e:
+                    logger.error(f"Failed to create build script: {e}")
+                    # Fallback to direct command
+                    cmd.append(f"--command={build_cmd}")
+            else:
+                cmd.append(f"--command={build_cmd}")
+                logger.info(f"Build command: {build_cmd}")
+
             logger.info(f"Working directory: {build_system.working_dir}")
         else:
             logger.info("No build command (interpreted language or no-build mode)")
@@ -430,6 +463,15 @@ class DatabaseManager:
                 duration_seconds=time.time() - start_time,
                 cached=False,
             )
+
+        finally:
+            # Clean up temporary build script if created
+            if build_script_path and os.path.exists(build_script_path):
+                try:
+                    os.unlink(build_script_path)
+                    logger.debug(f"Cleaned up build script: {build_script_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to clean up build script: {e}")
 
     def create_databases_parallel(
         self,
