@@ -298,17 +298,29 @@ def _get_default_primary_model() -> 'ModelConfig':
     # Otherwise use Ollama with first available model
     ollama_models = _get_available_ollama_models()
     if ollama_models:
-        # Prefer general reasoning models for security analysis
-        preferred = ['mistral', 'qwen', 'codellama', 'llama', 'gemma', 'deepseek-coder', 'deepseek']
-        selected_model = ollama_models[0]  # Default to first
+        selected_model = None
 
-        for pref in preferred:
-            for model in ollama_models:
-                if pref in model.lower():
-                    selected_model = model
+        # Honor OLLAMA_MODEL env var as top priority
+        if RaptorConfig.OLLAMA_MODEL:
+            requested = RaptorConfig.OLLAMA_MODEL
+            if requested in ollama_models:
+                selected_model = requested
+                logger.info(f"Using OLLAMA_MODEL override: {selected_model}")
+            else:
+                logger.warning(f"OLLAMA_MODEL='{requested}' not found on server (available: {', '.join(ollama_models[:5])}), falling back to auto-select")
+
+        # Fall back to preference list
+        if not selected_model:
+            preferred = ['mistral', 'qwen', 'codellama', 'llama', 'gemma', 'deepseek-coder', 'deepseek']
+            selected_model = ollama_models[0]  # Default to first
+
+            for pref in preferred:
+                for model in ollama_models:
+                    if pref in model.lower():
+                        selected_model = model
+                        break
+                if selected_model != ollama_models[0]:
                     break
-            if selected_model != ollama_models[0]:
-                break
 
         return ModelConfig(
             provider="ollama",
